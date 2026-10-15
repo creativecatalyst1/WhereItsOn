@@ -18,7 +18,10 @@ Win chance is WhereItsOn's own estimate from score, time left and pregame odds.
     package.json                npm scripts: serve, android
 
 ## Try it on a phone in two minutes (installable app)
-1. Put the `www` folder on any static host (GitHub Pages, Netlify drop, Cloudflare Pages), or run `npx serve www` on your Wi-Fi.
+Live demo: https://creativecatalyst1.github.io/WhereItsOn/ (republished from `www/` on every push to main
+by `.github/workflows/pages.yml`, which copies it to the `gh-pages` branch that GitHub Pages serves).
+
+1. Open the live demo, or put the `www` folder on any static host (Netlify drop, Cloudflare Pages), or run `npx serve www` on your Wi-Fi.
 2. Open the address in Chrome on Android, then menu > Install app. It opens full screen with its own icon and works offline.
 
 ## Make a real Android app (APK)
