@@ -4,6 +4,19 @@ A standalone, offline-capable mobile app. No servers, no licensed feeds: the dat
 (Cal 25-20 Virginia Tech, 49ers 32-29 Seahawks, Singapore GP, Valkyries' Finals clincher) compiled from public recaps.
 Win chance is WhereItsOn's own estimate from score, time left and pregame odds.
 
+## Project layout
+    www/                        the app itself (this folder is what gets hosted or packaged)
+      index.html                whole app: styles, weekend data and logic in one file
+      manifest.webmanifest      install name, colors and icons
+      sw.js                     offline cache (bump V, e.g. wio-v6 -> wio-v7, after changing any file)
+      icons/
+        icon-192.png            app icon, also the favicon and Apple touch icon
+        icon-512.png            app icon, large
+        icon-maskable-512.png   Android adaptive icon (extra padding for the crop)
+    fetch-icons.sh              optional: downloads streaming app and team icons into www/icons/
+    capacitor.config.json       Android wrapper settings (Capacitor)
+    package.json                npm scripts: serve, android
+
 ## Try it on a phone in two minutes (installable app)
 1. Put the `www` folder on any static host (GitHub Pages, Netlify drop, Cloudflare Pages), or run `npx serve www` on your Wi-Fi.
 2. Open the address in Chrome on Android, then menu > Install app. It opens full screen with its own icon and works offline.
