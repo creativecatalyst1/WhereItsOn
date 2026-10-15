@@ -38,3 +38,11 @@ Missing files fall back to letter badges, so nothing breaks. Check each brand's 
 ## Moments
 The chips under the logo jump between five moments: Sat pregame, Sat final drive, Sun F1 race, Sun 49ers 4th quarter, Mon recap.
 Default apps: Peacock, Prime Video, Apple TV, ESPN. The 49ers game is on FOX, so it shows the "not in your apps" case.
+
+## Motion
+- Welcome intro once per launch: the icon's board powers up and spells ON. Tap to skip, tap the logo to replay.
+- Switching moments: the board flickers, scores and clocks roll to their new values, win-chance charts redraw.
+- Tabs slide in from the side you tapped; game sheets slide up and down.
+- Live lights: chase bulbs on live game boards, blinking clock colons, a pulsing "now" point on the chart,
+  flashing scoring plays that just happened, and the bell rings when new alerts arrive.
+- Android's "Remove animations" setting (Accessibility) turns all of it off.

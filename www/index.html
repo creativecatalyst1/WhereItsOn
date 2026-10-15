@@ -278,6 +278,74 @@ textarea:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 .hero .team.long{font-size:23px}
 .apx{display:block;font-family:var(--display);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 
+/* ---------- motion: welcome intro, transitions, scoreboard lights ---------- */
+:root{--bulb:#ffd23a;--bulb-off:#2a2610;--bulb-glow:rgba(255,205,50,.7)}
+.logo{display:block;text-align:left}
+/* welcome: the app icon's dot-matrix board powers up and spells ON, then the app slides in */
+.intro{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(16px,4vh,28px);padding:24px;--s:min(62vw,44vh,300px);-webkit-tap-highlight-color:transparent;user-select:none}
+.intro.out{animation:introOut .5s cubic-bezier(.4,0,.2,1) forwards}
+@keyframes introOut{to{opacity:0;transform:scale(1.08)}}
+.ibox{position:relative;width:var(--s);height:var(--s);border-radius:22%;background:var(--board);border:calc(var(--s)*.012) solid var(--bezel);display:grid;place-items:center;animation:boxIn .55s cubic-bezier(.2,.9,.25,1.15) both}
+@keyframes boxIn{from{opacity:0;transform:scale(.8) translateY(12px)}}
+.ipow{position:absolute;top:9%;left:45.5%;width:9%;height:9%;border-radius:50%;background:#123020;animation:pow .9s steps(1) .3s both}
+@keyframes pow{0%,30%,60%{background:#123020;box-shadow:none}15%,45%,75%,100%{background:var(--green);box-shadow:0 0 calc(var(--s)*.06) var(--green)}}
+.imat{display:grid;grid-template-columns:repeat(11,calc(var(--s)*.05));gap:calc(var(--s)*.022);padding:calc(var(--s)*.05) calc(var(--s)*.045);margin-top:calc(var(--s)*.08);background:var(--well);border-radius:calc(var(--s)*.05);animation:matFlash .7s ease-out 1.3s both}
+@keyframes matFlash{25%{filter:brightness(1.8)}}
+.d{width:calc(var(--s)*.05);aspect-ratio:1;border-radius:50%;background:var(--bulb-off)}
+.d.l{animation:dotOn .45s steps(1) both;animation-delay:calc(.55s + var(--c)*42ms + var(--r)*14ms)}
+@keyframes dotOn{0%{background:var(--bulb-off);box-shadow:none}25%{background:var(--bulb);box-shadow:0 0 calc(var(--s)*.03) var(--bulb-glow)}50%{background:#6b5714;box-shadow:none}75%,100%{background:var(--bulb);box-shadow:0 0 calc(var(--s)*.035) var(--bulb-glow)}}
+.iword{font-family:var(--display);font-weight:800;font-size:clamp(34px,9vw,52px);letter-spacing:.04em;line-height:1;text-transform:uppercase;animation:rise .5s cubic-bezier(.2,.9,.25,1) 1.15s both}
+.iword b{color:var(--amber);text-shadow:0 0 10px var(--amber-glow)}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}}
+.itag{font-family:var(--led);font-weight:700;font-size:clamp(13px,3.6vw,17px);color:var(--amber);white-space:nowrap;overflow:hidden;width:calc(var(--n)*1ch);animation:type .75s steps(var(--n)) 1.4s both}
+@keyframes type{from{width:0}}
+.iskip{position:absolute;bottom:calc(20px + env(safe-area-inset-bottom,0px));font-family:var(--display);font-weight:600;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);animation:rise .4s 1s both}
+
+/* transitions */
+.scrim{animation:fadeIn .22s ease-out}
+.sheet{animation:sheetUp .34s cubic-bezier(.2,.9,.25,1)}
+.scrim.closing{animation:fadeOut .22s ease-in forwards}
+.scrim.closing .sheet{animation:sheetDown .22s ease-in forwards}
+@keyframes fadeIn{from{opacity:0}}
+@keyframes fadeOut{to{opacity:0}}
+@keyframes sheetUp{from{transform:translateY(100%)}}
+@keyframes sheetDown{to{transform:translateY(100%)}}
+.toast{animation:toastIn .28s cubic-bezier(.2,.9,.25,1.2)}
+.toast.out{animation:toastOut .2s ease-in forwards}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,16px) scale(.96)}}
+@keyframes toastOut{to{opacity:0;transform:translate(-50%,8px)}}
+.tab[aria-selected="true"]::before{animation:tabOn .35s cubic-bezier(.2,.9,.25,1)}
+@keyframes tabOn{from{transform:scaleX(0);opacity:0}}
+.card,.sbox,.play,.chip,.btn{transition:transform .12s ease-out}
+.card:active,.sbox:active,.play:active,.chip:active,.btn:active{transform:scale(.97)}
+.bell svg{transform-origin:50% 15%}
+
+/* scoreboard lights */
+.cln{animation:cln 1s steps(1) infinite}
+@keyframes cln{50%{opacity:.12}}
+.bulbs{height:10px;flex:none;border-bottom:1px solid var(--line);background:
+  radial-gradient(circle at 6px 5px,rgba(255,178,26,.4),transparent 6px) 0 0/36px 10px repeat-x,
+  radial-gradient(circle at 6px 5px,var(--amber) 2px,transparent 2.6px) 0 0/36px 10px repeat-x,
+  radial-gradient(circle at 6px 5px,#3a2c0c 2px,transparent 2.6px) 0 0/12px 10px repeat-x,#0c0d0a;
+  animation:chase .66s steps(3) infinite}
+@keyframes chase{to{background-position:36px 0,36px 0,0 0}}
+.spark circle{transform-box:fill-box;transform-origin:center}
+.spark.live .halo{animation:halo 1.6s ease-out infinite}
+@keyframes halo{0%{transform:scale(.6);fill-opacity:.5}100%{transform:scale(2.1);fill-opacity:0}}
+.wpbar i{transform-origin:left center}
+.play.fresh{animation:fresh 1.1s steps(1) 4}
+@keyframes fresh{0%{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber),0 0 16px rgba(255,178,26,.3)}50%{border-color:var(--bezel);box-shadow:none}}
+.lastplay.fresh .pill{animation:pillBlink .8s steps(1) 5}
+@keyframes pillBlink{50%{background:var(--amber-dim);color:var(--amber)}}
+
+/* Android "Remove animations" turns all of this off */
+@media (prefers-reduced-motion:reduce){
+  .intro *,.intro.out,.cln,.bulbs,.spark .halo,.play.fresh,.lastplay.fresh .pill,.scrim,.sheet,.toast,.tab::before{animation:none!important}
+  .intro .d.l{background:var(--bulb);box-shadow:0 0 6px var(--bulb-glow)}
+  .intro .ipow{background:var(--green)}
+  .card,.sbox,.play,.chip,.btn{transition:none}
+}
+
 /* unfolded foldables and tablets: use the width, two boards across instead of one phone column */
 @media (min-width:600px) and (pointer:coarse){
   .app{max-width:960px}
@@ -292,7 +360,7 @@ textarea:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
   <div class="scroll" id="scroll">
     <header class="top">
       <div>
-        <div class="logo">WhereIts<b>On</b></div>
+        <button class="logo" data-intro aria-label="WhereItsOn, replay the intro">WhereIts<b>On</b></button>
         <div class="daytag" id="daytag">SAT OCT 10 · 5:50 PM</div>
       </div>
       <button class="bell" data-bell aria-label="Alerts"><svg viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15z"/><path d="M10 21h4"/></svg><span class="pip" id="pip" hidden>3</span></button>
@@ -494,7 +562,7 @@ function ico(src,text,color,cls=''){return '<span class="ico '+cls+'" style="--i
 const svcIco=(id,cls)=>{const v=SERVICES.find(x=>x.id===id);return ico('app-'+id,v.ab,v.c,cls)};
 const teamIco=(n,cls)=>ico('team-'+slug(n),abbr(n).slice(0,3),null,cls);
 document.addEventListener('error',e=>{if(e.target&&e.target.tagName==='IMG'&&e.target.closest('.ico'))e.target.remove()},true);
-const led=(v,cls='',ghost='88')=>`<span class="led ${cls}"><span class="ghost" aria-hidden="true">${ghost}</span><span class="on">${v===''||v==null?'':esc(v)}</span></span>`;
+const led=(v,cls='',ghost='88',fx=s=>s)=>`<span class="led ${cls}"><span class="ghost" aria-hidden="true">${ghost}</span><span class="on">${v===''||v==null?'':fx(esc(v))}</span></span>`;
 function updatePip(){document.getElementById('pip').hidden=state.read}
 
 /* win chance helpers */
@@ -515,11 +583,11 @@ function spark(g,t){
   const area=`${d}L${X(last.p).toFixed(1)} ${H-pad}L${X(0).toFixed(1)} ${H-pad}Z`;
   const marks=pts.filter(q=>q.play).map(q=>`<circle class="pt" cx="${X(q.p).toFixed(1)}" cy="${Y(q.wp).toFixed(1)}" r="2.6"/>`).join('');
   const lx=X(last.p).toFixed(1),ly=Y(last.wp).toFixed(1);
-  return `<svg class="spark" viewBox="0 0 ${Wd} ${H}" role="img" aria-label="Win chance for ${esc(t)}: ${pts[0].wp}% at the start, ${last.wp}% now">
+  return `<svg class="spark${g.status==='live'?' live':''}" viewBox="0 0 ${Wd} ${H}" role="img" aria-label="Win chance for ${esc(t)}: ${pts[0].wp}% at the start, ${last.wp}% now">
     <line class="grid" x1="${pad}" x2="${Wd-pad}" y1="${Y(75).toFixed(1)}" y2="${Y(75).toFixed(1)}"/>
     <line class="grid" x1="${pad}" x2="${Wd-pad}" y1="${Y(25).toFixed(1)}" y2="${Y(25).toFixed(1)}"/>
     <line class="mid" x1="${pad}" x2="${Wd-pad}" y1="${Y(50).toFixed(1)}" y2="${Y(50).toFixed(1)}"/>
-    <path class="area" d="${area}"/><path class="line" d="${d}"/>${marks}
+    <path class="area" d="${area}"/><path class="line" pathLength="1" d="${d}"/>${marks}
     <circle class="halo" cx="${lx}" cy="${ly}" r="8"/><circle class="nowpt" cx="${lx}" cy="${ly}" r="4.5"/></svg>`;
 }
 function trendHTML(tr,suffix=' in 15 min'){
@@ -537,7 +605,7 @@ function swingHTML(g,d){
 
 /* shared pieces */
 function statusHTML(g){
-  if(g.status==='live')return `<span class="tag live"><span class="dot"></span>LIVE</span><span class="clock">${esc(g.clock)}</span>`;
+  if(g.status==='live')return `<span class="tag live"><span class="dot"></span>LIVE</span><span class="clock">${blinkColon(esc(g.clock))}</span>`;
   if(g.status==='final')return `<span class="tag">FINAL</span><span class="clock dim">${esc(g.time)}</span>`;
   return `<span class="clock">${g.day?'TMRW ':''}${esc(g.time)}</span>`;
 }
@@ -590,12 +658,12 @@ function laterFavs(){
 function lastPlayHTML(g){
   const pl=(g.plays||[])[g.plays.length-1];if(!pl)return '';
   const sw=swings(g);
-  return `<div class="lastplay"><span class="pill">${esc(pl.label)}</span><span class="lp-txt">${esc(pl.text)}<small>${esc(pl.when)} · ${pl.ago} min ago</small></span>${swingHTML(g,sw[sw.length-1])}</div>`;
+  return `<div class="lastplay${pl.ago<=2&&g.status==='live'?' fresh':''}"><span class="pill">${esc(pl.label)}</span><span class="lp-txt">${esc(pl.text)}<small>${esc(pl.when)} · ${pl.ago} min ago</small></span>${swingHTML(g,sw[sw.length-1])}</div>`;
 }
 function heroHTML({g,fav}){
   const owned=ownedSvc(g);
   if(g.status==='live'){
-    return `<section class="hero liveh"><button class="hero-main" data-game="${g.id}">
+    return `<section class="hero liveh"><div class="bulbs" aria-hidden="true"></div><button class="hero-main" data-game="${g.id}">
       <div class="head"><span class="league">${esc(g.league)}</span><span class="status">${statusHTML(g)}</span></div>
       ${wellHTML(g)}
       ${g.wp!=null?wpBlock(g,g.title?focusOf(g):fav):''}
@@ -608,7 +676,7 @@ function heroHTML({g,fav}){
   return `<section class="hero"><button class="hero-main" data-game="${g.id}">
     <div class="head"><span class="league">${esc(g.league)}</span><span class="status">${statusHTML(g)}</span></div>
     ${wellHTML(g)}
-    <div class="count"><span class="lab">Starts in</span>${led(cd,'','8:88')}</div>
+    <div class="count"><span class="lab">Starts in</span>${led(cd,'','8:88',blinkColon)}</div>
     ${pre!=null?`<div class="wp"><div class="wp-top"><span class="lab">Pregame win chance</span><span class="wp-now"><small>${esc(abbr(t))}</small>${pre}%</span></div><div class="wpbar"><i style="width:${pre}%"></i></div></div>`:''}
   </button>
   <div class="hero-foot">${watchHTML(g)}<button class="btn ghost sm" data-remindcard="${g.id}">${state.reminders.has(g.id)?'Reminder on':'Remind me'}</button></div></section>`;
@@ -626,12 +694,12 @@ function sboxHTML(g){
   const mid=g.title
     ?`<div class="sb-ev"><b>${esc(g.title)}</b><span>${esc(g.sub)}</span></div>${g.wp!=null?wpRow(g):''}`
     :`<div class="sb-rows"><span class="ab ${isFav(g.away)?'fav':''}">${teamIco(g.away)}${esc(abbr(g.away))}</span>${led(g.as??'')}<span class="ab ${isFav(g.home)?'fav':''}">${teamIco(g.home)}${esc(abbr(g.home))}</span>${led(g.hs??'')}</div>${wpRow(g)}`;
-  return `<button class="sbox" data-game="${g.id}"><div class="sb-head"><span class="sb-lg">${esc(g.lg)}${isFav(g.series)?' ★':''}</span><span class="sb-clk">${esc(g.clock)}</span></div>${mid}${lamp}</button>`;
+  return `<button class="sbox" data-game="${g.id}"><div class="sb-head"><span class="sb-lg">${esc(g.lg)}${isFav(g.series)?' ★':''}</span><span class="sb-clk">${blinkColon(esc(g.clock))}</span></div>${mid}${lamp}</button>`;
 }
 function matchup(g){return g.title?`${g.lg} · ${g.title}`:`${abbr(g.away)} ${g.as}–${g.hs} ${abbr(g.home)}`}
 function playHTML({g,pl,d}){
   const owned=ownedSvc(g);
-  return `<button class="play" data-game="${g.id}">
+  return `<button class="play${pl.ago<=2?' fresh':''}" data-game="${g.id}">
     <span class="ago">${pl.ago}<small>MIN AGO</small></span>
     <span class="pbody">
       <span class="l1"><span class="pill">${esc(pl.label)}</span><span class="mu">${esc(matchup(g))}</span></span>
@@ -725,7 +793,7 @@ function renderApps(){
 }
 function renderDemo(){
   document.getElementById('demo').innerHTML=`<span class="lab">Weekend moment</span>${Object.entries(SCEN).map(([id,s])=>`<button class="chip" data-scen="${id}" aria-pressed="${state.scen===id}">${s.label}</button>`).join('')}`;
-  document.getElementById('daytag').textContent=scen().title;
+  document.getElementById('daytag').innerHTML=blinkColon(esc(scen().title));
 }
 function render(){
   renderDemo();
@@ -738,19 +806,28 @@ function render(){
 function toast(msg){
   document.querySelector('.toast')?.remove();
   const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);
-  setTimeout(()=>t.remove(),2600);
+  setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),220)},2400);
 }
-function showSheet(inner,handler){
+function showSheet(inner,handler,quiet){
   const scrim=document.createElement('div');scrim.className='scrim';
   scrim.innerHTML=`<div class="sheet" role="dialog" aria-modal="true">${inner}</div>`;
+  if(quiet)scrim.style.animation=scrim.firstChild.style.animation='none';
   document.body.appendChild(scrim);
   scrim.addEventListener('click',e=>{
-    if(e.target===scrim||e.target.closest('[data-close]'))return scrim.remove();
+    if(scrim.classList.contains('closing'))return;
+    if(e.target===scrim||e.target.closest('[data-close]'))return closeSheet(scrim);
     handler(e,scrim);
   });
+  if(!quiet)drawCharts(scrim,280);
   return scrim;
 }
-function openSheet(id){
+function closeSheet(scrim){
+  if(!scrim||scrim.classList.contains('closing'))return;
+  if(RMQ.matches)return scrim.remove();
+  scrim.style.animation=scrim.firstChild.style.animation='';
+  scrim.classList.add('closing');setTimeout(()=>scrim.remove(),230);
+}
+function openSheet(id,quiet){
   const g=games().find(x=>x.id===id);if(!g)return;
   const owned=g.watch.filter(w=>state.owned.has(w)),other=g.watch.filter(w=>!state.owned.has(w));
   const head=g.title
@@ -780,13 +857,13 @@ function openSheet(id){
     <div class="actions">${g.status==='soon'?`<button class="btn ghost" data-remind>${reminded?'Reminder on':'Remind me'}</button>`:''}<button class="btn ghost" data-close>Close</button></div>`,
   (e,scrim)=>{
     const o=e.target.closest('[data-open]');if(o){toast(`In the live app, this opens ${svcName(o.dataset.open)} straight to the game.`);return}
-    const a=e.target.closest('[data-add]');if(a){state.owned.add(a.dataset.add);save();scrim.remove();render();openSheet(id);toast(`${svcName(a.dataset.add)} added to your apps`);return}
+    const a=e.target.closest('[data-add]');if(a){state.owned.add(a.dataset.add);save();scrim.remove();render();openSheet(id,true);toast(`${svcName(a.dataset.add)} added to your apps`);return}
     const r=e.target.closest('[data-remind]');if(r){
       if(state.reminders.has(id)){state.reminders.delete(id);r.textContent='Remind me';toast('Reminder removed')}
       else{state.reminders.add(id);r.textContent='Reminder on';toast(`Reminder set for 15 minutes before ${g.time}`)}
       save();render();
     }
-  });
+  },quiet);
 }
 function openAlerts(){
   state.read=true;save();updatePip();
@@ -818,10 +895,11 @@ function openAlerts(){
 }
 
 document.addEventListener('click',e=>{
-  if(e.target.closest('.scrim'))return;
+  if(e.target.closest('.scrim,.intro'))return;
+  if(e.target.closest('[data-intro]')){playIntro();return}
   if(e.target.closest('[data-bell]')){openAlerts();return}
-  const sc=e.target.closest('[data-scen]');if(sc){state.scen=sc.dataset.scen;state.sport='all';state.read=false;save();render();return}
-  const tab=e.target.closest('.tab');if(tab){if(tab.dataset.tab==='review'&&state.tab!=='review')state.from=state.tab;state.tab=tab.dataset.tab;state.sport='all';render();document.getElementById('scroll').scrollTop=0;window.scrollTo(0,0);return}
+  const sc=e.target.closest('[data-scen]');if(sc){const moved=state.scen!==sc.dataset.scen;state.scen=sc.dataset.scen;state.sport='all';state.read=false;save();render();if(moved)sceneFX();return}
+  const tab=e.target.closest('.tab');if(tab){const from=state.tab;if(tab.dataset.tab==='review'&&state.tab!=='review')state.from=state.tab;state.tab=tab.dataset.tab;state.sport='all';render();document.getElementById('scroll').scrollTop=0;window.scrollTo(0,0);if(from!==state.tab)tabFX(from,state.tab);return}
   const chip=e.target.closest('[data-sport]');if(chip){state.sport=chip.dataset.sport;render();return}
   if(e.target.closest('#mine')){state.onlyMine=!state.onlyMine;save();render();return}
   const sv=e.target.closest('[data-svc]');if(sv){const id=sv.dataset.svc;state.owned.has(id)?state.owned.delete(id):state.owned.add(id);save();render();return}
@@ -844,7 +922,7 @@ document.addEventListener('click',e=>{
 document.addEventListener('input',e=>{
   if(e.target.id==='q'){state.query=e.target.value;const pos=e.target.selectionStart;render();const q=document.getElementById('q');q.focus();q.setSelectionRange(pos,pos)}
 });
-document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelector('.scrim')?.remove()});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(introFinish)return introFinish();closeSheet(document.querySelector('.scrim:not(.closing)'))});
 
 /* shared setup and review notes (db + user capabilities; the page works without them) */
 const CLOUD={db:null,user:null,me:null,canWrite:null,notes:[],sharedOn:store.get('sharedOn',true)};
@@ -981,8 +1059,99 @@ async function initCloud(){
   db.collection('feedback').orderBy('at','desc').limit(100).onSnapshot(onNotes,dead);
 }
 
+/* motion: welcome intro, tab and moment transitions, scoreboard effects. Reduced motion skips all of it. */
+const RMQ=matchMedia('(prefers-reduced-motion: reduce)');
+const EASE='cubic-bezier(.2,.9,.25,1)';
+const TAB_ORDER=['now','later','teams','apps','review'];
+const ON_GLYPHS={O:['.###.','#...#','#...#','#...#','#...#','#...#','.###.'],N:['#...#','##..#','#.#.#','#.#.#','#..##','#...#','#...#']};
+let introFinish=null,scrambleTimer=0;
+function blinkColon(s){return s.replace(/:/g,'<span class="cln">:</span>')}
+function stagger(els,{dx=0,dy=10,step=45,dur=280,delay=0}={}){
+  if(RMQ.matches)return;
+  els.forEach((el,i)=>el.animate([{opacity:0,transform:`translate(${dx}px,${dy}px)`},{opacity:1,transform:'none'}],{duration:dur,delay:delay+Math.min(i,7)*step,easing:EASE,fill:'backwards'}));
+}
+function drawCharts(root=view,delay=0){
+  if(RMQ.matches||!root)return;
+  root.querySelectorAll('.spark').forEach(svg=>{
+    svg.querySelector('.line')?.animate([{strokeDasharray:1,strokeDashoffset:1},{strokeDasharray:1,strokeDashoffset:0}],{duration:900,delay,easing:'cubic-bezier(.3,.7,.2,1)',fill:'backwards'});
+    svg.querySelector('.area')?.animate([{opacity:0},{opacity:1}],{duration:600,delay:delay+300,fill:'backwards'});
+    const pts=[...svg.querySelectorAll('.pt')];
+    pts.forEach((c,i)=>c.animate([{transform:'scale(0)'},{transform:'scale(1.7)',offset:.6},{transform:'scale(1)'}],{duration:260,delay:delay+100+i*760/pts.length,fill:'backwards'}));
+    svg.querySelectorAll('.nowpt,.halo').forEach(c=>c.animate([{transform:'scale(0)'},{transform:'scale(1.5)',offset:.6},{transform:'scale(1)'}],{duration:340,delay:delay+850,fill:'backwards'}));
+  });
+  root.querySelectorAll('.wpbar i').forEach((b,i)=>b.animate([{transform:'scaleX(0)'},{transform:'scaleX(1)'}],{duration:700,delay:delay+i*40,easing:EASE,fill:'backwards'}));
+}
+/* scoreboard update: digits roll through random numbers, then settle on the real value */
+function scramble(){
+  if(RMQ.matches)return;
+  clearInterval(scrambleTimer);
+  const nodes=[];
+  document.querySelectorAll('#view .led .on,#view .wp-now,#view .sb-clk,#view .clock,#daytag').forEach(el=>{
+    const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);let n;
+    while((n=w.nextNode()))if(/\d/.test(n.data))nodes.push([n,n.data]);
+  });
+  let k=0;
+  scrambleTimer=setInterval(()=>{
+    const end=++k>7;
+    nodes.forEach(([n,t])=>n.data=end?t:t.replace(/\d/g,()=>Math.random()*10|0));
+    if(end)clearInterval(scrambleTimer);
+  },55);
+}
+function ringBell(){
+  const pip=document.getElementById('pip');
+  if(RMQ.matches||pip.hidden)return;
+  document.querySelector('.bell svg').animate([{transform:'rotate(0)'},{transform:'rotate(16deg)'},{transform:'rotate(-13deg)'},{transform:'rotate(9deg)'},{transform:'rotate(-5deg)'},{transform:'rotate(0)'}],{duration:750,delay:150,easing:'ease-out'});
+  pip.animate([{transform:'scale(0)'},{transform:'scale(1.3)',offset:.6},{transform:'scale(1)'}],{duration:380,delay:150,fill:'backwards'});
+}
+function tabFX(from,to){
+  const d=Math.sign(TAB_ORDER.indexOf(to)-TAB_ORDER.indexOf(from));
+  stagger([...view.children],{dx:d*22,dy:0,step:40,dur:300});
+  drawCharts(view,150);
+}
+/* switching weekend moments: the board flickers like a power change, then scores roll and charts redraw */
+function sceneFX(){
+  if(RMQ.matches)return;
+  view.animate([{opacity:.3},{opacity:1,offset:.3},{opacity:.55,offset:.5},{opacity:1}],{duration:320});
+  scramble();drawCharts(view,120);ringBell();
+}
+function enterFX(full){
+  if(RMQ.matches)return;
+  if(full){
+    document.querySelector('.top').animate([{transform:'translateY(-100%)',opacity:0},{transform:'none',opacity:1}],{duration:420,easing:EASE,fill:'backwards'});
+    document.querySelector('.nav').animate([{transform:'translateY(100%)'},{transform:'none'}],{duration:420,delay:80,easing:EASE,fill:'backwards'});
+  }
+  stagger([document.getElementById('demo'),...view.children],{dy:16,step:55,dur:380,delay:full?120:0});
+  drawCharts(view,full?450:200);
+  setTimeout(()=>{scramble();ringBell()},full?520:150);
+}
+/* welcome: the icon's board powers up (green lamp blinks, dots light column by column into ON),
+   the name and tagline come in, then the app slides into place. Tap anywhere to skip; tap the logo to replay. */
+function playIntro(){
+  document.querySelector('.intro')?.remove();
+  const rows=ON_GLYPHS.O.map((o,r)=>o+'.'+ON_GLYPHS.N[r]);
+  const tag='YOUR TEAMS · LIVE NOW · ON YOUR APPS';
+  const el=document.createElement('div');el.className='intro';el.setAttribute('aria-hidden','true');
+  el.innerHTML=`<div class="ibox"><span class="ipow"></span><div class="imat">${rows.map((row,r)=>[...row].map((ch,c)=>`<i class="d${ch==='#'?' l':''}" style="--c:${c};--r:${r}"></i>`).join('')).join('')}</div></div>
+    <div class="iword">WhereIts<b>On</b></div><div class="itag" style="--n:${tag.length}">${tag}</div><div class="iskip">Tap to skip</div>`;
+  document.body.appendChild(el);
+  const finish=()=>{
+    if(introFinish!==finish)return;
+    introFinish=null;clearTimeout(timer);
+    if(RMQ.matches)return el.remove();
+    el.classList.add('out');enterFX(true);
+    setTimeout(()=>el.remove(),520);
+  };
+  const timer=setTimeout(finish,RMQ.matches?1400:2500);
+  el.addEventListener('pointerdown',finish);
+  introFinish=finish;
+  try{sessionStorage.setItem('wio.intro','1')}catch(e){}
+}
+
 render();
 initCloud();
+/* intro once per app launch (tap the logo to see it again) */
+let introSeen=false;try{introSeen=!!sessionStorage.getItem('wio.intro')}catch(e){}
+if(!introSeen&&!RMQ.matches)playIntro();else enterFX(false);
 try{if("serviceWorker" in navigator&&location.protocol.indexOf("http")===0&&window.top===window)navigator.serviceWorker.register("sw.js").catch(function(){})}catch(e){}
 </script>
 
