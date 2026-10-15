@@ -27,12 +27,13 @@
   color-scheme:dark;
 }
 html,body{height:100%}
-body{background:var(--bg);color:var(--paint);font-family:var(--body);font-size:15px;line-height:1.4}
+body{margin:0;background:var(--bg);color:var(--paint);font-family:var(--body);font-size:15px;line-height:1.4}
 *{box-sizing:border-box}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
 button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 .app{max-width:420px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;background:var(--bg);position:relative}
-@media (min-width:640px){
+/* desktop with a mouse: show the app inside a phone frame (touch screens get the real layout) */
+@media (min-width:640px) and (hover:hover) and (pointer:fine){
   body{padding-block:24px}
   .app{height:860px;min-height:0;border:10px solid var(--bezel);border-radius:30px;overflow:hidden}
   .scroll{overflow-y:auto}
@@ -276,6 +277,15 @@ textarea:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 .team.long{font-size:21px}
 .hero .team.long{font-size:23px}
 .apx{display:block;font-family:var(--display);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+/* unfolded foldables and tablets: use the width, two boards across instead of one phone column */
+@media (min-width:600px) and (pointer:coarse){
+  .app{max-width:960px}
+  .list,.plays{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));align-items:start}
+  .list>.empty,.plays>.empty{grid-column:1/-1}
+  .sgrid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+  .sheet{max-width:560px}
+}
 </style>
 
 <div class="app" id="app">
