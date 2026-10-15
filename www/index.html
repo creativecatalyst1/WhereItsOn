@@ -338,9 +338,50 @@ textarea:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 .lastplay.fresh .pill{animation:pillBlink .8s steps(1) 5}
 @keyframes pillBlink{50%{background:var(--amber-dim);color:var(--amber)}}
 
+/* invite-only preview: gate, feedback button, feedback sheet, survey */
+.gate{position:fixed;inset:0;z-index:55;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center}
+.gate.out{animation:fadeOut .35s ease-in forwards}
+.gword{font-family:var(--display);font-weight:800;font-size:44px;letter-spacing:.04em;line-height:1;text-transform:uppercase}
+.gword b{color:var(--amber);text-shadow:0 0 10px var(--amber-glow)}
+.gtag{font-family:var(--led);font-weight:700;font-size:15px;color:var(--amber)}
+.gform{display:flex;gap:8px;width:min(100%,340px);margin-top:8px}
+.gcode{flex:1;min-width:0;height:48px;border-radius:8px;border:1px solid var(--bezel);background:var(--well);color:var(--amber);font-family:var(--led);font-weight:900;font-size:22px;letter-spacing:.2em;text-align:center;text-transform:uppercase}
+.gcode::placeholder{color:var(--amber-dim)}
+.gcode:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.gmsg{min-height:20px;font-size:14px;color:var(--muted)}
+.gmsg.err{color:var(--red)}
+.gnote{font-size:12px;color:var(--muted);max-width:320px}
+.fab{position:fixed;z-index:8;right:max(16px,calc((100vw - var(--colw,420px))/2 + 16px));bottom:calc(80px + env(safe-area-inset-bottom,0px));height:44px;padding:0 16px 0 13px;border-radius:22px;background:var(--amber);color:var(--ink);font-family:var(--display);font-weight:800;font-size:15px;letter-spacing:.08em;text-transform:uppercase;display:flex;align-items:center;gap:8px;box-shadow:0 0 14px rgba(255,178,26,.35),0 4px 12px rgba(0,0,0,.5);animation:fabIn .4s cubic-bezier(.2,.9,.25,1.2) both}
+.has-fab .main{padding-bottom:84px}
+.fab svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+@keyframes fabIn{from{opacity:0;transform:translateY(20px) scale(.9)}}
+@media (min-width:640px) and (hover:hover) and (pointer:fine){.fab{position:absolute;right:16px}}
+.seg2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg2 .chip{justify-content:center}
+.fbrow{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.lb{display:flex;flex-direction:column;gap:8px}
+.lbi{display:grid;grid-template-columns:52px minmax(0,1fr);gap:10px;align-items:start;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px}
+.lbi.pending{opacity:.7;border-style:dashed}
+.vote{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;border-radius:8px;border:1px solid var(--bezel);background:var(--well);color:var(--muted);font-size:13px;line-height:1}
+.vote b{font-family:var(--led);font-weight:900;font-size:20px;color:var(--paint)}
+.vote[aria-pressed="true"]{border-color:var(--amber);color:var(--amber);box-shadow:0 0 10px rgba(255,178,26,.25)}
+.vote[aria-pressed="true"] b{color:var(--amber);text-shadow:0 0 6px var(--amber-glow)}
+.vote:disabled{cursor:default}
+.lbm{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:4px}
+.lbc{font-size:12px;color:var(--muted);margin-top:4px}
+.pill.stage{background:var(--green);color:var(--ink)}
+.pill.mine{background:none;border:1px solid var(--bezel);color:var(--muted)}
+.pill.wait{background:var(--red-dim);color:var(--red)}
+.q{display:flex;flex-direction:column;gap:8px}
+.ql{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:.04em;text-transform:uppercase}
+.ql span{color:var(--muted);font-weight:600;font-size:14px;letter-spacing:0;text-transform:none}
+.rates{display:flex;gap:6px}
+.rate{width:48px;height:48px;border-radius:8px;border:1px solid var(--bezel);background:var(--well);font-size:24px;color:var(--amber-dim)}
+.rate[aria-pressed="true"]{color:var(--amber);border-color:var(--amber);text-shadow:0 0 8px var(--amber-glow)}
+
 /* Android "Remove animations" turns all of this off */
 @media (prefers-reduced-motion:reduce){
-  .intro *,.intro.out,.cln,.bulbs,.spark .halo,.play.fresh,.lastplay.fresh .pill,.scrim,.sheet,.toast,.tab::before{animation:none!important}
+  .intro *,.intro.out,.cln,.bulbs,.spark .halo,.play.fresh,.lastplay.fresh .pill,.scrim,.sheet,.toast,.tab::before,.fab,.gate.out{animation:none!important}
   .intro .d.l{background:var(--bulb);box-shadow:0 0 6px var(--bulb-glow)}
   .intro .ipow{background:var(--green)}
   .card,.sbox,.play,.chip,.btn{transition:none}
@@ -348,7 +389,7 @@ textarea:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 
 /* unfolded foldables and tablets: use the width, two boards across instead of one phone column */
 @media (min-width:600px) and (pointer:coarse){
-  .app{max-width:960px}
+  .app{max-width:960px;--colw:960px}
   .list,.plays{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));align-items:start}
   .list>.empty,.plays>.empty{grid-column:1/-1}
   .sgrid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
@@ -1147,11 +1188,191 @@ function playIntro(){
   try{sessionStorage.setItem('wio.intro','1')}catch(e){}
 }
 
+/* invite-only preview: personal invite links, visit tracking, feedback notes with a vote leaderboard, a 3-tap survey.
+   The backend is a Google Sheet's Apps Script web app (feedback/Code.gs, setup in feedback/SETUP.md).
+   Leave FEEDBACK_URL empty for an open demo with no gate and no feedback button. */
+const FEEDBACK_URL='';
+const FB_KINDS=[['Idea','Idea'],['Problem','Problem'],['Like','Like']];
+const fb={invite:store.get('invite',null),view:'write',kind:'Idea',draft:'',board:null,surveyClock:0,surveySecs:0};
+async function api(a,body={},code){
+  let res;
+  try{res=await fetch(FEEDBACK_URL,{method:'POST',body:JSON.stringify({a,code:code||fb.invite?.code,...body})})}
+  catch(e){throw Object.assign(new Error('offline'),{code:'offline'})}
+  let j;try{j=await res.json()}catch(e){throw Object.assign(new Error('server'),{code:'server'})}
+  if(!j.ok){if(j.error==='invite'&&!code)lockOut();throw Object.assign(new Error(j.error),{code:j.error})}
+  return j;
+}
+function fbErr(e){return ({offline:'You seem to be offline. Try again when you are connected.',rate:'That is a lot of feedback at once. Try again in a little while.',invite:'Your invite is no longer active.',gone:'That note was removed.'})[e.code]||'Something went wrong. Try again in a moment.'}
+function visitCtx(){
+  const ua=navigator.userAgent;
+  const device=/Android/.test(ua)?'Android':/iPhone|iPad|iPod/.test(ua)?'iPhone/iPad':/Mac/.test(ua)?'Mac':/Windows/.test(ua)?'Windows':'Other';
+  return {device,screen:innerWidth+'x'+innerHeight,installed:matchMedia('(display-mode: standalone)').matches};
+}
+
+/* gate */
+function showGate(msg='',err=false){
+  let g=document.querySelector('.gate');
+  if(!g){
+    g=document.createElement('div');g.className='gate';
+    g.innerHTML=`<div class="gword">WhereIts<b>On</b></div><div class="gtag">PREVIEW · INVITE ONLY</div>
+      <p class="sub">Open the invite link you were sent, or enter your code.</p>
+      <form class="gform"><input class="gcode" name="code" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" aria-label="Invite code"><button class="btn">Enter</button></form>
+      <div class="gmsg" role="status"></div>
+      <p class="gnote">The WhereItsOn team sees your visits, survey answers and notes. Other testers see notes without your name.</p>`;
+    g.querySelector('form').addEventListener('submit',e=>{e.preventDefault();const c=g.querySelector('.gcode').value.trim().toUpperCase();if(c)unlock(c)});
+    document.body.appendChild(g);
+  }
+  const m=g.querySelector('.gmsg');m.textContent=msg;m.classList.toggle('err',err);
+  return g;
+}
+function hideGate(){
+  const g=document.querySelector('.gate');if(!g)return;
+  if(RMQ.matches)return g.remove();
+  g.classList.add('out');setTimeout(()=>g.remove(),360);
+}
+async function unlock(code){
+  const g=showGate('Checking your invite…');g.querySelector('button').disabled=true;
+  try{
+    const j=await api('hello',{ctx:visitCtx()},code);
+    fb.invite={code,name:j.name||''};store.set('invite',fb.invite);
+    hideGate();toast(fb.invite.name?`Welcome to the preview, ${fb.invite.name}`:'Welcome to the preview');
+    if(!document.querySelector('.intro'))enterFX(true);
+    onUnlocked(j);
+  }catch(e){
+    showGate(e.code==='invite'?'That invite is not active. Check the link you were sent.':e.code==='offline'?'You seem to be offline. Connect and try again.':'Could not reach the preview right now. Try again in a moment.',true);
+  }
+  g.querySelector('button').disabled=false;
+}
+function lockOut(){
+  fb.invite=null;store.set('invite',null);
+  document.getElementById('fab')?.remove();document.body.classList.remove('has-fab');clearInterval(fb.surveyClock);fb.surveyClock=0;
+  document.querySelectorAll('.scrim').forEach(s=>s.remove());
+  showGate('This invite is no longer active.',true);
+}
+function onUnlocked(j){
+  if(j&&j.survey)store.set('survey','done');
+  if(!document.getElementById('fab')){
+    const b=document.createElement('button');b.className='fab';b.id='fab';b.dataset.feedback='';
+    b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg>Feedback';
+    document.getElementById('app').appendChild(b);
+  }
+  document.body.classList.add('has-fab');
+  startSurveyClock();
+}
+function initPreview(){
+  if(!FEEDBACK_URL)return;
+  const m=/[?&#]invite=([A-Za-z0-9]{4,12})/.exec(location.search+location.hash);
+  if(m){history.replaceState(null,'',location.pathname);unlock(m[1].toUpperCase());return}
+  if(!fb.invite){showGate();return}
+  onUnlocked();
+  api('hello',{ctx:visitCtx()}).then(j=>{if(j.survey)store.set('survey','done')}).catch(()=>{}); // offline keeps a known tester in
+}
+
+/* feedback sheet: leave a note, or vote on the leaderboard */
+function openFeedback(view){
+  if(view)fb.view=view;
+  showSheet(`<span class="grab"></span><div class="sheet-title">Feedback</div>
+    <div class="seg2" role="group" aria-label="Feedback view"><button class="chip" data-fbview="write">Leave a note</button><button class="chip" data-fbview="board">Leaderboard</button></div>
+    <div id="fbBody"></div><div class="actions"><button class="btn ghost" data-close>Close</button></div>`,
+  (e,scrim)=>{
+    const v=e.target.closest('[data-fbview]');if(v){fb.view=v.dataset.fbview;renderFb();return}
+    const k=e.target.closest('[data-fbkind]');if(k){fb.kind=k.dataset.fbkind;renderFb();return}
+    if(e.target.closest('#fbSend')){postNote();return}
+    const vt=e.target.closest('[data-vote]');if(vt&&!vt.disabled)castVote(vt.dataset.vote);
+  });
+  renderFb();
+}
+function renderFb(){
+  const body=document.getElementById('fbBody');if(!body)return;
+  document.querySelectorAll('[data-fbview]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.fbview===fb.view));
+  if(fb.view==='write'){
+    body.innerHTML=`<div class="q"><div class="kinds" role="group" aria-label="Type of note">${FB_KINDS.map(([k,l])=>`<button class="chip" data-fbkind="${k}" aria-pressed="${fb.kind===k}">${l}</button>`).join('')}</div>
+      <label class="sub" for="fbText">About: ${esc(TABNAMES[state.tab]||'On Now')} · ${esc(scen().label)}</label>
+      <textarea id="fbText" maxlength="500" placeholder="${fb.kind==='Problem'?'What went wrong or felt confusing?':fb.kind==='Like'?'What works well for you?':'What would make this better?'}">${esc(fb.draft)}</textarea>
+      <div class="fbrow"><span class="sub" id="fbCount">${fb.draft.length}/500</span><button class="btn" id="fbSend">Send</button></div>
+      <p class="sub">Other testers see your note without your name and can vote for it. Notes that attack people are held for review.</p></div>`;
+    const ta=document.getElementById('fbText');
+    ta.addEventListener('input',()=>{fb.draft=ta.value;document.getElementById('fbCount').textContent=ta.value.length+'/500'});
+    return;
+  }
+  body.innerHTML=`<p class="sub">Vote for the changes you want most. The team marks what is planned and done.</p><div class="lb" id="lbList">${fb.board?boardHTML():'<div class="empty">Loading the leaderboard…</div>'}</div>`;
+  if(!fb.board)loadBoard();
+}
+async function loadBoard(){
+  try{fb.board=(await api('board')).items}
+  catch(e){const l=document.getElementById('lbList');if(l)l.innerHTML=`<div class="empty">${esc(fbErr(e))}</div>`;return}
+  const l=document.getElementById('lbList');if(l){l.innerHTML=boardHTML();stagger([...l.children],{dy:8,step:35,dur:260})}
+}
+function boardHTML(){
+  if(!fb.board.length)return '<div class="empty">No notes yet. Be the first: switch to Leave a note.</div>';
+  return fb.board.map(n=>{
+    const kind=FB_KINDS.some(([k])=>k===n.kind)?n.kind:'Idea';
+    return `<div class="lbi${n.pending?' pending':''}">
+      <button class="vote" data-vote="${esc(n.id)}" aria-pressed="${n.voted}" ${n.mine||n.pending?'disabled':''} aria-label="${n.mine?'Your note':'Vote'}, ${n.votes} votes">▲<b>${n.votes}</b></button>
+      <div><div class="lbm"><span class="pill ${kind.toLowerCase()}">${esc(kind)}</span>${n.stage&&n.stage!=='New'?`<span class="pill stage">${esc(n.stage)}</span>`:''}${n.mine?'<span class="pill mine">Yours</span>':''}${n.pending?'<span class="pill wait">Waiting for review</span>':''}</div>
+      <div class="nc-text">${esc(n.text)}</div><div class="lbc">${esc(n.ctx)}${n.ctx?' · ':''}${esc(ago(n.at||Date.now()))}</div></div></div>`}).join('');
+}
+async function postNote(){
+  const btn=document.getElementById('fbSend'),text=fb.draft.trim();
+  if(!text){toast('Write a note first');return}
+  btn.disabled=true;btn.textContent='Sending…';
+  try{
+    const j=await api('note',{kind:fb.kind,text,ctx:`${TABNAMES[state.tab]||'On Now'} · ${scen().label}`});
+    fb.draft='';fb.board=null;fb.view='board';renderFb();
+    toast(j.held?'Thanks. Your note is waiting for a quick review.':'Thanks! Your note is on the leaderboard.');
+  }catch(e){toast(fbErr(e));btn.disabled=false;btn.textContent='Send'}
+}
+async function castVote(id){
+  const n=fb.board&&fb.board.find(x=>x.id===id);if(!n)return;
+  n.voted=!n.voted;n.votes+=n.voted?1:-1;
+  const l=document.getElementById('lbList');if(l)l.innerHTML=boardHTML();
+  try{const j=await api('vote',{id});n.votes=j.votes;n.voted=j.voted}
+  catch(e){n.voted=!n.voted;n.votes+=n.voted?1:-1;toast(fbErr(e))}
+  const l2=document.getElementById('lbList');if(l2)l2.innerHTML=boardHTML();
+}
+
+/* 3-tap survey: offered once after about 90 seconds of use, at most three launches, never again once answered */
+function startSurveyClock(){
+  if(store.get('survey',0)==='done'||fb.surveyClock)return;
+  fb.surveyClock=setInterval(()=>{
+    if(document.visibilityState!=='visible'||document.querySelector('.scrim,.intro,.gate'))return;
+    fb.surveySecs+=5;
+    if(fb.surveySecs>=90){clearInterval(fb.surveyClock);openSurvey()}
+  },5000);
+}
+function openSurvey(force){
+  const shown=store.get('survey',0);
+  if(shown==='done'||(!force&&shown>=3))return;
+  store.set('survey',shown+1);
+  const sv={stars:0,use:''};
+  const paint=scrim=>{
+    scrim.querySelectorAll('[data-rate]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.rate<=sv.stars));
+    scrim.querySelectorAll('[data-use]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.use===sv.use));
+    scrim.querySelector('#svSend').disabled=!(sv.stars&&sv.use);
+  };
+  const scrim=showSheet(`<span class="grab"></span><div class="sheet-title">Quick 3 taps</div>
+    <p class="sub">Help shape WhereItsOn. It takes about ten seconds.</p>
+    <div class="q"><div class="ql" id="svq1">How useful is it?</div><div class="rates" role="group" aria-labelledby="svq1">${[1,2,3,4,5].map(i=>`<button class="rate" data-rate="${i}" aria-pressed="false" aria-label="${i} star${i>1?'s':''}">★</button>`).join('')}</div></div>
+    <div class="q"><div class="ql" id="svq2">Would you use it on game day?</div><div class="kinds" role="group" aria-labelledby="svq2">${['Yes','Maybe','No'].map(u=>`<button class="chip" data-use="${u}" aria-pressed="false">${u}</button>`).join('')}</div></div>
+    <div class="q"><label class="ql" for="svText">One thing you'd change? <span>(optional)</span></label><input class="search" id="svText" maxlength="200" autocomplete="off"></div>
+    <div class="actions"><button class="btn ghost" data-close>Not now</button><button class="btn" id="svSend" disabled>Send</button></div>`,
+  async(e,scrim)=>{
+    const r=e.target.closest('[data-rate]');if(r){sv.stars=+r.dataset.rate;paint(scrim);return}
+    const u=e.target.closest('[data-use]');if(u){sv.use=u.dataset.use;paint(scrim);return}
+    const s=e.target.closest('#svSend');if(!s||s.disabled)return;
+    s.disabled=true;s.textContent='Sending…';
+    try{await api('survey',{stars:sv.stars,use:sv.use,change:scrim.querySelector('#svText').value.trim()});store.set('survey','done');closeSheet(scrim);toast('Thanks! That really helps.')}
+    catch(e){toast(fbErr(e));s.disabled=false;s.textContent='Send'}
+  });
+}
+document.addEventListener('click',e=>{if(e.target.closest('[data-feedback]'))openFeedback()});
+
 render();
 initCloud();
 /* intro once per app launch (tap the logo to see it again) */
 let introSeen=false;try{introSeen=!!sessionStorage.getItem('wio.intro')}catch(e){}
 if(!introSeen&&!RMQ.matches)playIntro();else enterFX(false);
+initPreview();
 try{if("serviceWorker" in navigator&&location.protocol.indexOf("http")===0&&window.top===window)navigator.serviceWorker.register("sw.js").catch(function(){})}catch(e){}
 </script>
 

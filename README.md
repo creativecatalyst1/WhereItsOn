@@ -39,6 +39,13 @@ Missing files fall back to letter badges, so nothing breaks. Check each brand's 
 The chips under the logo jump between five moments: Sat pregame, Sat final drive, Sun F1 race, Sun 49ers 4th quarter, Mon recap.
 Default apps: Peacock, Prime Video, Apple TV, ESPN. The 49ers game is on FOX, so it shows the "not in your apps" case.
 
+## Invite-only preview and feedback
+Each tester gets a personal invite link. Inside the app: a Feedback button (notes typed as Idea / Problem / Like,
+plus a leaderboard where testers vote and see what is Planned or Done), a 3-tap survey offered once after about
+90 seconds, and a visit log. Notes show without names; ones that attack people are held for review.
+Everything lands in a Google Sheet that doubles as the dashboard. Setup: [feedback/SETUP.md](feedback/SETUP.md).
+Until `FEEDBACK_URL` in `www/index.html` is set, the app runs as an open demo with no gate.
+
 ## Motion
 - Welcome intro once per launch: the icon's board powers up and spells ON. Tap to skip, tap the logo to replay.
 - Switching moments: the board flickers, scores and clocks roll to their new values, win-chance charts redraw.
