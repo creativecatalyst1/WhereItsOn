@@ -74,10 +74,11 @@ function setup() {
     sh.getRange(1, 1, 1, head.length).setValues([head]).setFontWeight('bold');
     sh.setFrozenRows(1);
   });
-  ss.getSheetByName('Invites').getRange('D2:D500').insertCheckboxes();
+  ss.getSheetByName('Invites').getRange('D2:D200').insertCheckboxes();
   const fb = ss.getSheetByName('Feedback');
-  fb.getRange('H2:H2000').setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(STATUS, true).build());
-  fb.getRange('K2:K2000').setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(STAGES, true).build());
+  const fbRows = fb.getMaxRows() - 1; // a new tab has 1000 rows; ranges past that throw
+  fb.getRange(2, F.status + 1, fbRows, 1).setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(STATUS, true).build());
+  fb.getRange(2, F.stage + 1, fbRows, 1).setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(STAGES, true).build());
   fb.setColumnWidth(F.note + 1, 360);
 
   const lb = ss.getSheetByName('Leaderboard') || ss.insertSheet('Leaderboard');
