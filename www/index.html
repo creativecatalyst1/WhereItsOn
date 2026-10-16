@@ -1191,7 +1191,7 @@ function playIntro(){
 /* invite-only preview: personal invite links, visit tracking, feedback notes with a vote leaderboard, a 3-tap survey.
    The backend is a Google Sheet's Apps Script web app (feedback/Code.gs, setup in feedback/SETUP.md).
    Leave FEEDBACK_URL empty for an open demo with no gate and no feedback button. */
-const FEEDBACK_URL='';
+const FEEDBACK_URL='https://script.google.com/macros/s/AKfycbyCDifQjOHsG06yY7yRTFODXYMBw7rjZCR4M59nA-5ElRd9cuvwrtCUzfiUbZjWi4GRpg/exec';
 const FB_KINDS=[['Idea','Idea'],['Problem','Problem'],['Like','Like']];
 const fb={invite:store.get('invite',null),view:'write',kind:'Idea',draft:'',board:null,surveyClock:0,surveySecs:0};
 async function api(a,body={},code){
@@ -1239,6 +1239,7 @@ async function unlock(code){
     if(!document.querySelector('.intro'))enterFX(true);
     onUnlocked(j);
   }catch(e){
+    if(e.code!=='invite')g.querySelector('.gcode').value=code; // keep the code from the link so a retry is one tap
     showGate(e.code==='invite'?'That invite is not active. Check the link you were sent.':e.code==='offline'?'You seem to be offline. Connect and try again.':'Could not reach the preview right now. Try again in a moment.',true);
   }
   g.querySelector('button').disabled=false;
