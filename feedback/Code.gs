@@ -1,3 +1,5 @@
+/** @OnlyCurrentDoc  (limits the script to this one spreadsheet instead of all of your Google Sheets) */
+
 /**
  * WhereItsOn invite-only preview: feedback backend.
  *
