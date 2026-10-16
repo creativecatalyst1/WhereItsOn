@@ -8,7 +8,7 @@ Win chance is WhereItsOn's own estimate from score, time left and pregame odds.
     www/                        the app itself (this folder is what gets hosted or packaged)
       index.html                whole app: styles, weekend data and logic in one file
       manifest.webmanifest      install name, colors and icons
-      sw.js                     offline cache (bump V, e.g. wio-v6 -> wio-v7, after changing any file)
+      sw.js                     offline cache: the page refreshes on the next open when online; bump V when icons or the manifest change
       icons/
         icon-192.png            app icon, also the favicon and Apple touch icon
         icon-512.png            app icon, large
