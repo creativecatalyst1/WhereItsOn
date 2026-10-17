@@ -1,0 +1,1387 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090a08">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>WhereItsOn</title>
+<meta name="description" content="Invite-only preview. A TV guide for sports fans: your teams, live now, on your apps.">
+<meta property="og:title" content="WhereItsOn · invite-only preview">
+<meta property="og:description" content="A TV guide for sports fans: your teams, live now, on your apps.">
+<meta property="og:image" content="https://creativecatalyst1.github.io/WhereItsOn/icons/icon-512.png">
+<meta property="og:url" content="https://creativecatalyst1.github.io/WhereItsOn/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700;800&family=Doto:wght@700;900&display=swap">
+<style>
+/* Layout: one Android phone column styled as a stadium scoreboard. Your teams sit on top as big game-center boards (score, win-chance trend, last scoring play), then a wall of live score boxes and a feed of scoring plays with win-chance swings. */
+:root{
+  --bg:#090a08; --board:#121410; --well:#050604; --bezel:#2a2d22; --line:#23261d;
+  --paint:#f0ebdc; --muted:#8f8c7a;
+  --amber:#ffb21a; --amber-dim:#33260a; --amber-glow:rgba(255,178,26,.55);
+  --red:#ff4338; --red-dim:#36100d; --green:#45f08a; --green-dim:#0e2e1d;
+  --ink:#1a1200;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --led:"Doto",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--paint);font-family:var(--body);font-size:15px;line-height:1.4}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.app{max-width:420px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;background:var(--bg);position:relative}
+/* desktop with a mouse: show the app inside a phone frame (touch screens get the real layout) */
+@media (min-width:640px) and (hover:hover) and (pointer:fine){
+  body{padding-block:24px}
+  .app{height:860px;min-height:0;border:10px solid var(--bezel);border-radius:30px;overflow:hidden}
+  .scroll{overflow-y:auto}
+}
+.scroll{flex:1;display:flex;flex-direction:column}
+
+/* header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--board);border-bottom:1px solid var(--bezel);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.logo{font-family:var(--display);font-weight:800;font-size:28px;letter-spacing:.04em;line-height:1;text-transform:uppercase}
+.logo b{color:var(--amber);text-shadow:0 0 8px var(--amber-glow)}
+.daytag{font-family:var(--led);font-weight:700;font-size:15px;color:var(--amber);opacity:.85;margin-top:4px;letter-spacing:.04em;white-space:nowrap}
+.bell{position:relative;flex:none;width:44px;height:44px;border-radius:8px;border:1px solid var(--bezel);background:var(--well);display:grid;place-items:center;color:var(--amber)}
+.bell svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.pip{position:absolute;top:-7px;right:-7px;min-width:20px;height:20px;border-radius:10px;background:var(--red);color:#fff;font:700 12px/1 var(--display);display:grid;place-items:center;padding:0 5px;box-shadow:0 0 8px rgba(255,67,56,.6)}
+
+.demo{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 16px 0}
+.demo .chip{height:32px;padding:0 12px;font-size:14px}
+.main{flex:1;padding:16px 16px 28px;display:flex;flex-direction:column;gap:20px}
+h1{font-family:var(--display);font-weight:700;font-size:36px;line-height:1;margin:0;text-transform:uppercase;letter-spacing:.01em;text-wrap:balance}
+.sub{color:var(--muted);margin:0;font-size:14px}
+h2{font-family:var(--display);font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0;font-weight:700}
+.section{display:flex;flex-direction:column;gap:10px}
+
+/* LED digits: a dim ghost sits under the lit value, like unlit segments */
+.led{display:inline-grid;justify-items:end;font-family:var(--led);font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+.led>*{grid-area:1/1}
+.led .ghost{color:var(--amber-dim)}
+.led .on{color:var(--amber);text-shadow:0 0 8px var(--amber-glow)}
+
+/* filters */
+.chips{display:flex;gap:8px;overflow-x:auto;margin:0 -16px;padding:2px 16px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;height:36px;padding:0 12px;border-radius:6px;border:1px solid var(--bezel);background:var(--board);font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:.08em;text-transform:uppercase;display:flex;align-items:center;gap:8px;color:var(--muted)}
+.chip .n{font-family:var(--led);font-weight:700;font-size:15px;color:var(--amber-dim);letter-spacing:0}
+.chip[aria-pressed="true"]{color:var(--amber);border-color:var(--amber);background:var(--amber-dim);box-shadow:0 0 10px rgba(255,178,26,.2)}
+.chip[aria-pressed="true"] .n{color:var(--amber)}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:14px;color:var(--muted)}
+.switch{width:48px;height:28px;border-radius:6px;background:var(--well);border:1px solid var(--bezel);position:relative;flex:none}
+.switch::after{content:"";position:absolute;top:4px;left:4px;width:18px;height:18px;border-radius:4px;background:#3a3c31;transition:transform .15s,background .15s}
+.switch[aria-checked="true"]{border-color:var(--amber)}
+.switch[aria-checked="true"]::after{transform:translateX(20px);background:var(--amber);box-shadow:0 0 8px var(--amber-glow)}
+@media (prefers-reduced-motion:reduce){.switch::after{transition:none}}
+
+/* shared card parts */
+.list{display:flex;flex-direction:column;gap:12px}
+.card{background:var(--board);border:1px solid var(--bezel);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;text-align:left;width:100%}
+.card:active{filter:brightness(1.15)}
+.head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 12px;background:#0c0d0a;border-bottom:1px solid var(--line)}
+.league{font-family:var(--display);font-weight:600;font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.status{display:flex;align-items:center;gap:8px;flex:none}
+.tag{font-family:var(--display);font-weight:700;font-size:13px;letter-spacing:.14em;color:var(--muted);display:flex;align-items:center;gap:6px}
+.tag.live{color:var(--red)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 8px var(--red);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.3}}
+@media (prefers-reduced-motion:reduce){.dot{animation:none}}
+.clock{font-family:var(--led);font-weight:700;font-size:18px;color:var(--amber);text-shadow:0 0 6px var(--amber-glow);line-height:1;white-space:nowrap}
+.clock.dim{color:var(--muted);text-shadow:none}
+.well{margin:10px 12px 0;background:var(--well);border:1px solid var(--line);border-radius:6px;padding:8px 12px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;row-gap:2px;column-gap:12px}
+.team{font-family:var(--display);font-weight:700;font-size:25px;line-height:1.15;text-transform:uppercase;letter-spacing:.03em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.team.fav::after{content:" ★";color:var(--amber);font-size:16px}
+.well .led{font-size:34px}
+.event{grid-column:1/-1;padding:2px 0}
+.event .t{font-family:var(--display);font-weight:700;font-size:25px;text-transform:uppercase;letter-spacing:.03em;line-height:1.15}
+.event .s{color:var(--muted);font-size:14px}
+.seg{margin:10px 12px 0;height:6px;border-radius:2px;background:repeating-linear-gradient(90deg,var(--red-dim) 0 6px,transparent 6px 9px)}
+.seg i{display:block;height:100%;background:repeating-linear-gradient(90deg,var(--red) 0 6px,transparent 6px 9px)}
+.watch{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:10px 12px 12px}
+.net{font-family:var(--display);font-weight:600;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);flex-basis:100%}
+.svc{display:inline-flex;align-items:center;gap:7px;font-family:var(--display);font-weight:600;font-size:15px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.svc::before{content:"";width:9px;height:9px;border-radius:50%;background:#33352b;flex:none}
+.svc.own{color:var(--paint)}
+.svc.own::before{background:var(--green);box-shadow:0 0 7px var(--green)}
+.lamp{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);min-width:0}
+.lamp::before{content:"";width:8px;height:8px;border-radius:50%;background:#33352b;flex:none}
+.lamp span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lamp.own{color:var(--paint)}
+.lamp.own::before{background:var(--green);box-shadow:0 0 7px var(--green)}
+.pill{flex:none;font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);background:var(--amber);border-radius:4px;padding:2px 7px;line-height:1.3}
+
+/* win chance */
+.wp{padding:10px 12px 0;display:flex;flex-direction:column;gap:8px}
+.wp-top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.wp-now{font-family:var(--led);font-weight:900;font-size:28px;color:var(--amber);text-shadow:0 0 8px var(--amber-glow);line-height:1}
+.wp-now small{font-family:var(--display);font-weight:700;font-size:14px;letter-spacing:.1em;color:var(--muted);text-shadow:none;margin-right:6px}
+.trend{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.trend.up{color:var(--amber)}
+.trend.down{color:var(--red)}
+.spark{width:100%;height:auto;display:block;background:var(--well);border:1px solid var(--line);border-radius:6px}
+.spark .grid{stroke:var(--line);stroke-width:1}
+.spark .mid{stroke:var(--bezel);stroke-width:1;stroke-dasharray:3 4}
+.spark .line{fill:none;stroke:var(--amber);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.spark .area{fill:var(--amber);fill-opacity:.14;stroke:none}
+.spark .pt{fill:var(--amber)}
+.spark .halo{fill:var(--amber);fill-opacity:.25}
+.spark .nowpt{fill:var(--amber);stroke:var(--well);stroke-width:2}
+.wpbar{height:8px;border-radius:2px;background:var(--bezel);overflow:hidden}
+.wpbar i{display:block;height:100%;background:var(--amber);box-shadow:0 0 8px var(--amber-glow)}
+.swing{flex:none;text-align:right;font-family:var(--led);font-weight:900;font-size:20px;line-height:1}
+.swing small{display:block;font-family:var(--display);font-weight:600;font-size:11px;letter-spacing:.1em;color:var(--muted);margin-top:4px;text-shadow:none}
+.swing.up{color:var(--amber);text-shadow:0 0 6px var(--amber-glow)}
+.swing.down{color:var(--red)}
+
+/* my teams hero boards */
+.hero{background:var(--board);border:1px solid var(--bezel);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.hero.liveh{border-color:#5a2a25}
+.hero-main{display:flex;flex-direction:column;text-align:left;width:100%}
+.hero-main:active{filter:brightness(1.12)}
+.hero .well .led{font-size:46px}
+.hero .team{font-size:29px}
+.lastplay{margin:10px 12px 0;display:flex;align-items:center;gap:10px}
+.lp-txt{flex:1;min-width:0;font-size:14px;line-height:1.3}
+.lp-txt small{display:block;color:var(--muted);font-size:12px}
+.hero-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px 12px}
+.hero-foot .watch{padding:0;flex:1;min-width:0}
+.count{margin:10px 12px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--well);border:1px solid var(--line);border-radius:6px;padding:8px 12px}
+.count .led{font-size:40px}
+
+/* live score wall */
+.sgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.sbox{background:var(--board);border:1px solid var(--bezel);border-radius:10px;padding:8px 10px 10px;display:flex;flex-direction:column;gap:8px;text-align:left;min-width:0}
+.sbox:active{filter:brightness(1.15)}
+.sb-head{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.sb-lg{font-family:var(--display);font-weight:700;font-size:13px;letter-spacing:.12em;color:var(--muted)}
+.sb-clk{font-family:var(--led);font-weight:700;font-size:15px;color:var(--amber);white-space:nowrap}
+.sb-rows{background:var(--well);border:1px solid var(--line);border-radius:6px;padding:4px 8px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:8px}
+.ab{font-family:var(--display);font-weight:700;font-size:21px;text-transform:uppercase;letter-spacing:.04em}
+.ab.fav::after{content:" ★";color:var(--amber);font-size:12px}
+.sbox .led{font-size:28px}
+.sb-ev{background:var(--well);border:1px solid var(--line);border-radius:6px;padding:8px;display:flex;flex-direction:column;gap:2px}
+.sb-ev b{font-family:var(--display);font-weight:700;font-size:20px;text-transform:uppercase;letter-spacing:.03em;line-height:1.1}
+.sb-ev span{font-size:12px;color:var(--muted)}
+.sb-wp{display:flex;align-items:center;gap:8px;font-family:var(--display);font-weight:700;font-size:14px;letter-spacing:.06em;color:var(--paint)}
+.sb-wp .wpbar{flex:1;min-width:0}
+.sb-wp .trend{font-size:13px}
+.sbox .lamp{margin-top:auto}
+
+/* scoring plays feed */
+.plays{display:flex;flex-direction:column;gap:8px}
+.play{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:10px;align-items:center;background:var(--board);border:1px solid var(--bezel);border-radius:10px;padding:10px 12px;text-align:left;width:100%}
+.play:active{filter:brightness(1.15)}
+.ago{font-family:var(--led);font-weight:900;font-size:22px;color:var(--amber);text-shadow:0 0 6px var(--amber-glow);line-height:1;text-align:center}
+.ago small{display:block;font-family:var(--display);font-weight:600;font-size:10px;letter-spacing:.1em;color:var(--muted);margin-top:5px;text-shadow:none}
+.pbody{display:flex;flex-direction:column;gap:4px;min-width:0}
+.l1{display:flex;align-items:center;gap:8px}
+.mu{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.ptx{font-size:15px;line-height:1.3}
+.ptx .when{color:var(--muted)}
+.empty{background:var(--well);border:1px dashed var(--bezel);border-radius:10px;padding:20px 16px;text-align:center;color:var(--muted);font-size:14px}
+.slot{font-family:var(--led);font-weight:900;font-size:24px;color:var(--amber);text-shadow:0 0 8px var(--amber-glow);line-height:1;margin-top:6px}
+
+/* teams */
+.search{height:48px;border-radius:8px;border:1px solid var(--bezel);background:var(--well);padding:0 16px;font:inherit;color:var(--paint);width:100%}
+.search::placeholder{color:var(--muted)}
+.row{display:flex;align-items:center;gap:12px;background:var(--board);border:1px solid var(--bezel);border-radius:10px;padding:10px 12px}
+.row .info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;text-align:left}
+.row .name{font-family:var(--display);font-weight:700;font-size:20px;text-transform:uppercase;letter-spacing:.03em;line-height:1.1}
+.row .name small{font-weight:600;font-size:14px;color:var(--muted);letter-spacing:.08em}
+.row .what{font-size:13px;color:var(--muted)}
+.row .what.live{color:var(--red);font-weight:600}
+.tile{width:44px;height:44px;border-radius:6px;background:var(--well);border:1px solid var(--line);display:grid;place-items:center;font-family:var(--led);font-weight:900;font-size:15px;color:var(--amber);flex:none}
+.star{width:40px;height:40px;border-radius:6px;display:grid;place-items:center;font-size:22px;color:var(--muted);flex:none}
+.star[aria-pressed="true"]{color:var(--amber);text-shadow:0 0 8px var(--amber-glow)}
+
+/* apps */
+.panel{background:var(--board);border:1px solid var(--bezel);border-radius:10px;padding:2px 14px}
+.approw{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.approw:last-child{border-bottom:0}
+.approw .info{flex:1;min-width:0}
+.approw .nm{font-family:var(--display);font-weight:700;font-size:20px;text-transform:uppercase;letter-spacing:.04em;line-height:1.1}
+.approw .what{font-size:13px;color:var(--muted)}
+.note{font-size:13px;color:var(--muted);background:var(--well);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+
+/* nav */
+.nav{position:sticky;bottom:0;z-index:6;background:var(--board);border-top:1px solid var(--bezel);display:grid;grid-template-columns:repeat(4,1fr);padding:0 4px calc(6px + env(safe-area-inset-bottom,0px))}
+.tab{display:flex;flex-direction:column;align-items:center;gap:4px;font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:0 0 4px}
+.tab::before{content:"";width:34px;height:3px;border-radius:0 0 3px 3px;background:transparent;margin-bottom:6px}
+.tab svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tab[aria-selected="true"]{color:var(--amber)}
+.tab[aria-selected="true"]::before{background:var(--amber);box-shadow:0 0 10px var(--amber-glow)}
+
+/* sheets */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{width:100%;max-width:420px;max-height:90%;overflow-y:auto;background:var(--board);border:1px solid var(--bezel);border-bottom:0;border-radius:16px 16px 0 0;padding:10px 16px calc(20px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px;animation:up .2s ease-out}
+@keyframes up{from{transform:translateY(30px);opacity:.6}}
+@media (prefers-reduced-motion:reduce){.sheet{animation:none}}
+.sheet .wp{padding:0}
+.grab{width:36px;height:4px;border-radius:2px;background:var(--bezel);align-self:center}
+.sheet-title{font-family:var(--display);font-weight:800;font-size:30px;text-transform:uppercase;letter-spacing:.02em;line-height:1}
+.lab{font-family:var(--display);font-size:12px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;font-weight:600;white-space:nowrap}
+.bigboard{background:var(--well);border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:center}
+.side{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.side .nm{font-family:var(--display);font-weight:700;font-size:26px;line-height:1.05;text-transform:uppercase;letter-spacing:.03em;overflow-wrap:anywhere}
+.side .led{font-size:60px}
+.splay{display:grid;grid-template-columns:68px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.splay:last-child{border-bottom:0}
+.splay .w{font-family:var(--led);font-weight:700;font-size:14px;color:var(--amber)}
+.splay .tx{font-size:14px;line-height:1.3;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.opt{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.opt .info{flex:1;min-width:0}
+.opt .nm{font-family:var(--display);font-weight:700;font-size:19px;text-transform:uppercase;letter-spacing:.04em;line-height:1.1}
+.opt .what{font-size:13px;color:var(--muted)}
+.opt .when{font-family:var(--led);font-weight:700;font-size:14px;color:var(--amber);flex:none}
+.btn{height:42px;padding:0 18px;border-radius:6px;background:var(--amber);color:var(--ink);font-family:var(--display);font-weight:800;font-size:17px;letter-spacing:.08em;text-transform:uppercase;flex:none;box-shadow:0 0 12px rgba(255,178,26,.25)}
+.btn.ghost{background:none;color:var(--paint);border:1px solid var(--bezel);box-shadow:none}
+.btn.sm{height:36px;padding:0 14px;font-size:15px}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.actions .btn{flex:1}
+.toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--paint);color:var(--ink);padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;z-index:30;max-width:calc(100% - 32px);box-shadow:0 4px 16px rgba(0,0,0,.5)}
+.sample{font-family:var(--display);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:center}
+
+/* review tab, notes, shared setup */
+.nav{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:1fr}
+.tab{position:relative}
+.tab .cnt{position:absolute;top:0;left:calc(50% + 8px);min-width:18px;height:18px;border-radius:9px;background:var(--red);color:#fff;font:700 11px/1 var(--display);display:grid;place-items:center;padding:0 4px;box-shadow:0 0 8px rgba(255,67,56,.6)}
+.form{padding:14px;display:flex;flex-direction:column;gap:12px}
+.kinds{display:flex;gap:8px;flex-wrap:wrap}
+textarea{width:100%;min-height:104px;resize:vertical;border-radius:8px;border:1px solid var(--bezel);background:var(--well);color:var(--paint);font:inherit;padding:12px;line-height:1.4}
+textarea::placeholder{color:var(--muted)}
+textarea:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.ncard{background:var(--board);border:1px solid var(--bezel);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.ncard.done{opacity:.6}
+.nc-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.nc-ctx{font-family:var(--display);font-weight:700;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.nc-when{margin-left:auto;font-size:12px;color:var(--muted)}
+.nc-text{white-space:pre-wrap;overflow-wrap:anywhere;font-size:15px}
+.nc-foot{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.nc-by{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:.06em;text-transform:uppercase;margin-right:auto}
+.pill.problem{background:var(--red);color:#fff}
+.pill.like{background:var(--green);color:var(--ink)}
+.ico{position:relative;display:inline-grid;place-items:center;width:20px;height:20px;border-radius:5px;background:var(--well);border:1px solid var(--bezel);overflow:hidden;flex:none;vertical-align:middle;margin-right:6px;line-height:1}
+.ico .mono{font-family:var(--led);font-weight:900;font-size:7px;color:var(--ic);letter-spacing:0;text-shadow:none}
+.ico img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#fff;padding:2px}
+.ico.md{width:34px;height:34px;border-radius:8px;margin:0}
+.ico.md .mono{font-size:11px}
+.ico.lg{width:44px;height:44px;border-radius:8px;margin:0}
+.ico.lg .mono{font-size:14px}
+.side .ico.md{width:38px;height:38px}
+.ab .ico{margin-right:5px;vertical-align:-3px}
+.event .t .ico{margin-right:8px;vertical-align:-3px}
+[hidden]{display:none!important}
+.team.long{font-size:21px}
+.hero .team.long{font-size:23px}
+.apx{display:block;font-family:var(--display);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+/* ---------- motion: welcome intro, transitions, scoreboard lights ---------- */
+:root{--bulb:#ffd23a;--bulb-off:#2a2610;--bulb-glow:rgba(255,205,50,.7)}
+.logo{display:block;text-align:left}
+/* welcome: the app icon's dot-matrix board powers up and spells ON, then the app slides in */
+.intro{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(16px,4vh,28px);padding:24px;--s:min(62vw,44vh,300px);-webkit-tap-highlight-color:transparent;user-select:none}
+.intro.out{animation:introOut .5s cubic-bezier(.4,0,.2,1) forwards}
+@keyframes introOut{to{opacity:0;transform:scale(1.08)}}
+.ibox{position:relative;width:var(--s);height:var(--s);border-radius:22%;background:var(--board);border:calc(var(--s)*.012) solid var(--bezel);display:grid;place-items:center;animation:boxIn .55s cubic-bezier(.2,.9,.25,1.15) both}
+@keyframes boxIn{from{opacity:0;transform:scale(.8) translateY(12px)}}
+.ipow{position:absolute;top:9%;left:45.5%;width:9%;height:9%;border-radius:50%;background:#123020;animation:pow .9s steps(1) .3s both}
+@keyframes pow{0%,30%,60%{background:#123020;box-shadow:none}15%,45%,75%,100%{background:var(--green);box-shadow:0 0 calc(var(--s)*.06) var(--green)}}
+.imat{display:grid;grid-template-columns:repeat(11,calc(var(--s)*.05));gap:calc(var(--s)*.022);padding:calc(var(--s)*.05) calc(var(--s)*.045);margin-top:calc(var(--s)*.08);background:var(--well);border-radius:calc(var(--s)*.05);animation:matFlash .7s ease-out 1.3s both}
+@keyframes matFlash{25%{filter:brightness(1.8)}}
+.d{width:calc(var(--s)*.05);aspect-ratio:1;border-radius:50%;background:var(--bulb-off)}
+.d.l{animation:dotOn .45s steps(1) both;animation-delay:calc(.55s + var(--c)*42ms + var(--r)*14ms)}
+@keyframes dotOn{0%{background:var(--bulb-off);box-shadow:none}25%{background:var(--bulb);box-shadow:0 0 calc(var(--s)*.03) var(--bulb-glow)}50%{background:#6b5714;box-shadow:none}75%,100%{background:var(--bulb);box-shadow:0 0 calc(var(--s)*.035) var(--bulb-glow)}}
+.iword{font-family:var(--display);font-weight:800;font-size:clamp(34px,9vw,52px);letter-spacing:.04em;line-height:1;text-transform:uppercase;animation:rise .5s cubic-bezier(.2,.9,.25,1) 1.15s both}
+.iword b{color:var(--amber);text-shadow:0 0 10px var(--amber-glow)}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}}
+.itag{font-family:var(--led);font-weight:700;font-size:clamp(13px,3.6vw,17px);color:var(--amber);white-space:nowrap;overflow:hidden;width:calc(var(--n)*1ch);animation:type .75s steps(var(--n)) 1.4s both}
+@keyframes type{from{width:0}}
+.iskip{position:absolute;bottom:calc(20px + env(safe-area-inset-bottom,0px));font-family:var(--display);font-weight:600;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);animation:rise .4s 1s both}
+
+/* transitions */
+.scrim{animation:fadeIn .22s ease-out}
+.sheet{animation:sheetUp .34s cubic-bezier(.2,.9,.25,1)}
+.scrim.closing{animation:fadeOut .22s ease-in forwards}
+.scrim.closing .sheet{animation:sheetDown .22s ease-in forwards}
+@keyframes fadeIn{from{opacity:0}}
+@keyframes fadeOut{to{opacity:0}}
+@keyframes sheetUp{from{transform:translateY(100%)}}
+@keyframes sheetDown{to{transform:translateY(100%)}}
+.toast{animation:toastIn .28s cubic-bezier(.2,.9,.25,1.2)}
+.toast.out{animation:toastOut .2s ease-in forwards}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,16px) scale(.96)}}
+@keyframes toastOut{to{opacity:0;transform:translate(-50%,8px)}}
+.tab[aria-selected="true"]::before{animation:tabOn .35s cubic-bezier(.2,.9,.25,1)}
+@keyframes tabOn{from{transform:scaleX(0);opacity:0}}
+.card,.sbox,.play,.chip,.btn{transition:transform .12s ease-out}
+.card:active,.sbox:active,.play:active,.chip:active,.btn:active{transform:scale(.97)}
+.bell svg{transform-origin:50% 15%}
+
+/* scoreboard lights */
+.cln{animation:cln 1s steps(1) infinite}
+@keyframes cln{50%{opacity:.12}}
+.bulbs{height:10px;flex:none;border-bottom:1px solid var(--line);background:
+  radial-gradient(circle at 6px 5px,rgba(255,178,26,.4),transparent 6px) 0 0/36px 10px repeat-x,
+  radial-gradient(circle at 6px 5px,var(--amber) 2px,transparent 2.6px) 0 0/36px 10px repeat-x,
+  radial-gradient(circle at 6px 5px,#3a2c0c 2px,transparent 2.6px) 0 0/12px 10px repeat-x,#0c0d0a;
+  animation:chase .66s steps(3) infinite}
+@keyframes chase{to{background-position:36px 0,36px 0,0 0}}
+.spark circle{transform-box:fill-box;transform-origin:center}
+.spark.live .halo{animation:halo 1.6s ease-out infinite}
+@keyframes halo{0%{transform:scale(.6);fill-opacity:.5}100%{transform:scale(2.1);fill-opacity:0}}
+.wpbar i{transform-origin:left center}
+.play.fresh{animation:fresh 1.1s steps(1) 4}
+@keyframes fresh{0%{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber),0 0 16px rgba(255,178,26,.3)}50%{border-color:var(--bezel);box-shadow:none}}
+.lastplay.fresh .pill{animation:pillBlink .8s steps(1) 5}
+@keyframes pillBlink{50%{background:var(--amber-dim);color:var(--amber)}}
+
+/* invite-only preview: gate, feedback button, feedback sheet, survey */
+.gate{position:fixed;inset:0;z-index:55;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center}
+.gate.out{animation:fadeOut .35s ease-in forwards}
+.gword{font-family:var(--display);font-weight:800;font-size:44px;letter-spacing:.04em;line-height:1;text-transform:uppercase}
+.gword b{color:var(--amber);text-shadow:0 0 10px var(--amber-glow)}
+.gtag{font-family:var(--led);font-weight:700;font-size:15px;color:var(--amber)}
+.gform{display:flex;gap:8px;width:min(100%,340px);margin-top:8px}
+.gcode{flex:1;min-width:0;height:48px;border-radius:8px;border:1px solid var(--bezel);background:var(--well);color:var(--amber);font-family:var(--led);font-weight:900;font-size:22px;letter-spacing:.2em;text-align:center;text-transform:uppercase}
+.gcode::placeholder{color:var(--amber-dim)}
+.gcode:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.gmsg{min-height:20px;font-size:14px;color:var(--muted)}
+.gmsg.err{color:var(--red)}
+.gnote{font-size:12px;color:var(--muted);max-width:320px}
+.fab{position:fixed;z-index:8;right:max(16px,calc((100vw - var(--colw,420px))/2 + 16px));bottom:calc(80px + env(safe-area-inset-bottom,0px));height:44px;padding:0 16px 0 13px;border-radius:22px;background:var(--amber);color:var(--ink);font-family:var(--display);font-weight:800;font-size:15px;letter-spacing:.08em;text-transform:uppercase;display:flex;align-items:center;gap:8px;box-shadow:0 0 14px rgba(255,178,26,.35),0 4px 12px rgba(0,0,0,.5);animation:fabIn .4s cubic-bezier(.2,.9,.25,1.2) both}
+.has-fab .main{padding-bottom:84px}
+.fab svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+@keyframes fabIn{from{opacity:0;transform:translateY(20px) scale(.9)}}
+@media (min-width:640px) and (hover:hover) and (pointer:fine){.fab{position:absolute;right:16px}}
+.seg2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg2 .chip{justify-content:center}
+.fbrow{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.lb{display:flex;flex-direction:column;gap:8px}
+.lbi{display:grid;grid-template-columns:52px minmax(0,1fr);gap:10px;align-items:start;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px}
+.lbi.pending{opacity:.7;border-style:dashed}
+.vote{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;border-radius:8px;border:1px solid var(--bezel);background:var(--well);color:var(--muted);font-size:13px;line-height:1}
+.vote b{font-family:var(--led);font-weight:900;font-size:20px;color:var(--paint)}
+.vote[aria-pressed="true"]{border-color:var(--amber);color:var(--amber);box-shadow:0 0 10px rgba(255,178,26,.25)}
+.vote[aria-pressed="true"] b{color:var(--amber);text-shadow:0 0 6px var(--amber-glow)}
+.vote:disabled{cursor:default}
+.lbm{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:4px}
+.lbc{font-size:12px;color:var(--muted);margin-top:4px}
+.pill.stage{background:var(--green);color:var(--ink)}
+.pill.mine{background:none;border:1px solid var(--bezel);color:var(--muted)}
+.pill.wait{background:var(--red-dim);color:var(--red)}
+.q{display:flex;flex-direction:column;gap:8px}
+.ql{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:.04em;text-transform:uppercase}
+.ql span{color:var(--muted);font-weight:600;font-size:14px;letter-spacing:0;text-transform:none}
+.rates{display:flex;gap:6px}
+.rate{width:48px;height:48px;border-radius:8px;border:1px solid var(--bezel);background:var(--well);font-size:24px;color:var(--amber-dim)}
+.rate[aria-pressed="true"]{color:var(--amber);border-color:var(--amber);text-shadow:0 0 8px var(--amber-glow)}
+
+/* Android "Remove animations" turns all of this off */
+@media (prefers-reduced-motion:reduce){
+  .intro *,.intro.out,.cln,.bulbs,.spark .halo,.play.fresh,.lastplay.fresh .pill,.scrim,.sheet,.toast,.tab::before,.fab,.gate.out{animation:none!important}
+  .intro .d.l{background:var(--bulb);box-shadow:0 0 6px var(--bulb-glow)}
+  .intro .ipow{background:var(--green)}
+  .card,.sbox,.play,.chip,.btn{transition:none}
+}
+
+/* unfolded foldables and tablets: use the width, two boards across instead of one phone column */
+@media (min-width:600px) and (pointer:coarse){
+  .app{max-width:960px;--colw:960px}
+  .list,.plays{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));align-items:start}
+  .list>.empty,.plays>.empty{grid-column:1/-1}
+  .sgrid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+  .sheet{max-width:560px}
+}
+</style>
+
+<div class="app" id="app">
+  <div class="scroll" id="scroll">
+    <header class="top">
+      <div>
+        <button class="logo" data-intro aria-label="WhereItsOn, replay the intro">WhereIts<b>On</b></button>
+        <div class="daytag" id="daytag">SAT OCT 10 · 5:50 PM</div>
+      </div>
+      <button class="bell" data-bell aria-label="Alerts"><svg viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15z"/><path d="M10 21h4"/></svg><span class="pip" id="pip" hidden>3</span></button>
+    </header>
+    <div class="demo" id="demo"></div>
+    <main class="main" id="view"></main>
+  </div>
+  <nav class="nav" role="tablist" aria-label="Sections">
+    <button class="tab" role="tab" data-tab="now" aria-selected="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg>On Now</button>
+    <button class="tab" role="tab" data-tab="later" aria-selected="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Later</button>
+    <button class="tab" role="tab" data-tab="teams" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></svg>My Teams</button>
+    <button class="tab" role="tab" data-tab="apps" aria-selected="false"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>My Apps</button>
+    <button class="tab" id="tab-review" role="tab" data-tab="review" aria-selected="false" hidden><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>Review<span class="cnt" id="notecnt" hidden></span></button>
+  </nav>
+</div>
+
+<script>
+const SERVICES=[
+ {id:'yttv',name:'YouTube TV',kind:'Live TV',ab:'YTV',c:'#ff4338'},
+ {id:'peacock',name:'Peacock',kind:'Streaming',ab:'PCK',c:'#f5c518'},
+ {id:'prime',name:'Prime Video',kind:'Streaming',ab:'PRM',c:'#2aa8ff'},
+ {id:'apple',name:'Apple TV',kind:'Streaming',ab:'ATV',c:'#e8e8e8'},
+ {id:'paramount',name:'Paramount+',kind:'Streaming',ab:'P+',c:'#2d7bff'},
+ {id:'espn',name:'ESPN',kind:'Streaming',ab:'ESP',c:'#ff4338'},
+ {id:'fox',name:'Fox One',kind:'Streaming',ab:'FOX',c:'#4aa3ff'},
+ {id:'nbalp',name:'NBA League Pass',kind:'Streaming',ab:'NBA',c:'#ff8a3d'},
+ {id:'max',name:'HBO Max',kind:'Streaming',ab:'MAX',c:'#8a63ff'},
+ {id:'fubo',name:'Fubo',kind:'Live TV',ab:'FBO',c:'#ff7a1a'},
+ {id:'netflix',name:'Netflix',kind:'Streaming',ab:'NFX',c:'#ff2d2d'}
+];
+const SPORTS=[['all','All'],['football','Football'],['basketball','Basketball'],['racing','Racing'],['soccer','Soccer'],['baseball','Baseball'],['golf','Golf'],['hockey','Hockey'],['tennis','Tennis']];
+const AB={'49ers':'SF','Seahawks':'SEA','Virginia Tech':'VT','Cal':'CAL','Stanford':'STAN','Valkyries':'GSV','Dream':'ATL','Aces':'LV','Warriors':'GSW','Leader':'P1','Formula 1':'F1'};
+const slug=s=>String(s).toLowerCase().replace(/&/g,'and').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+
+/* Snapshot of the Oct 9-12, 2026 sports weekend. Scores, scorers, start times and channels come from public recaps.
+   Plays marked "approx" have a known quarter but an estimated clock. Win chance is WhereItsOn's own estimate
+   (score, time left, pregame odds), not licensed data. All times are Pacific. */
+const soon=(id,sport,league,away,home,time,net,watch,x={})=>({id,sport,league,away,home,status:'soon',time,net,watch,...x});
+const fin=(id,sport,league,away,home,as,hs,time,net,watch,x={})=>({id,sport,league,away,home,as,hs,status:'final',time,net,watch,...x});
+const phi=x=>{const t=1/(1+.2316419*Math.abs(x)),d=.3989423*Math.exp(-x*x/2),p=d*t*(.3193815+t*(-.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));return x>0?1-p:p};
+const clampWp=v=>Math.max(1,Math.min(99,Math.round(v)));
+const mmss=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+const fmtT=m=>{m=((Math.round(m)%1440)+1440)%1440;const h=Math.floor(m/60);return ((h+11)%12+1)+':'+String(m%60).padStart(2,'0')+' '+(h<12?'AM':'PM')};
+/* football win chance: normal model on the final margin, pregame spread fades as time runs out */
+const winp=(sc,mu,e)=>{const f=Math.max(3600-e,0)/3600,sd=3+10.5*Math.sqrt(f);return clampWp(100*phi((sc[0]-sc[1]+mu*f)/sd))};
+
+/* d.plays sc = [away, home] after the play; q = quarter; clk = seconds left in the quarter; est = clock estimated */
+function fbGame(d,mode,t,x={}){
+  const fi=d.focus===d.away?0:1,mu=d.mu||0,orient=sc=>fi?[sc[1],sc[0]]:sc;
+  const all=d.plays.map(p=>({...p,e:(p.q-1)*900+(900-p.clk)}));
+  const base={id:d.id,sport:'football',lg:d.lg,league:d.league,away:d.away,home:d.home,net:d.net,watch:d.watch,focus:d.focus};
+  if(mode==='soon')return {...base,status:'soon',time:fmtT(d.kick),pre:d.pre,...x};
+  const end=mode==='final',T=end?3600:t,seen=all.filter(p=>p.e<=T),last=seen.length?seen[seen.length-1].sc:[0,0],pre=d.pre??50;
+  const plays=seen.map(p=>({ago:end?0:Math.round((T-p.e)/3600*d.wall),p:p.e/3600,when:'Q'+p.q+(p.est?'':' '+mmss(p.clk)),label:p.lab,text:p.text,approx:!!p.est,wp:winp(orient(p.sc),mu,p.e)}));
+  if(end)return {...base,status:'final',as:last[0],hs:last[1],time:d.when,pre,prog:1,wp:last[fi]>last[1-fi]?100:0,plays,...x};
+  const q=Math.min(4,Math.floor(T/900)+1),clk=900-(T-(q-1)*900);
+  return {...base,status:'live',as:last[0],hs:last[1],clock:'Q'+q+' '+mmss(clk),prog:T/3600,pre,wp:winp(orient(last),mu,T),plays,...x};
+}
+const nowFb=(d,T)=>Math.round(d.kick+T/3600*d.wall);
+
+const CAL={id:'cal',lg:'NCAAF',league:'College Football · ACC',away:'Virginia Tech',home:'Cal',focus:'Cal',mu:0,pre:null,net:'ACC Network',watch:['espn','yttv','fubo'],kick:750,wall:205,when:'Sat 12:30 PM',plays:[
+ {q:2,clk:660,est:1,lab:'TD',text:'Virginia Tech: Greene 30-yd touchdown catch from Grunkemeyer',sc:[7,0]},
+ {q:2,clk:480,est:1,lab:'TD',text:'Cal: Emory 5-yd touchdown run ties it',sc:[7,7]},
+ {q:2,clk:300,est:1,lab:'TD',text:'Virginia Tech: Hawkins Jr. 3-yd touchdown run',sc:[14,7]},
+ {q:2,clk:60,est:1,lab:'FG',text:'Cal: McGough 35-yd field goal',sc:[14,10]},
+ {q:3,clk:300,est:1,lab:'FG',text:'Cal: McGough 22-yd field goal',sc:[14,13]},
+ {q:4,clk:252,lab:'TD',text:'Cal: Brousseau 3-yd touchdown pass to Perry-Smith takes the lead',sc:[14,19]},
+ {q:4,clk:100,est:1,lab:'TD',text:'Virginia Tech: Grunkemeyer 1-yd touchdown run retakes the lead',sc:[20,19]},
+ {q:4,clk:18,lab:'TD',text:'Cal: Emory 2-yd touchdown run ends a 75-yard, 57-second drive',sc:[20,25]},
+ {q:4,clk:0,lab:'STOP',text:'Cal safety Sydney breaks up a pass in the end zone as time expires',sc:[20,25]}
+]};
+const SF={id:'sf',lg:'NFL',league:'NFL · Week 5',away:'49ers',home:'Seahawks',focus:'49ers',mu:-3,pre:41,net:'FOX',watch:['fox','yttv','fubo'],kick:805,wall:190,when:'Sun 1:25 PM',plays:[
+ {q:1,clk:360,est:1,lab:'TD',text:'49ers: Purdy 2-yd touchdown pass to Evans after a Green interception',sc:[7,0]},
+ {q:2,clk:480,est:1,lab:'PTS',text:'Seahawks put up 13 first-half points (play detail not in this snapshot)',sc:[7,13]},
+ {q:2,clk:270,est:1,lab:'TD',text:'49ers: McCaffrey 11-yd touchdown run after Warner forces a fumble',sc:[14,13]},
+ {q:2,clk:150,est:1,lab:'EJECT',text:'49ers: Greenlaw ejected for a late hit and a head-butt',sc:[14,13]},
+ {q:2,clk:18,lab:'TD',text:'49ers: Halton recovers a fumble in the end zone for a touchdown',sc:[21,13]},
+ {q:3,clk:540,est:1,lab:'FG',text:'Seahawks: Myers 43-yd field goal',sc:[21,16]},
+ {q:3,clk:360,est:1,lab:'TD',text:'Seahawks: Darnold 16-yd touchdown pass to Smith-Njigba',sc:[21,23]},
+ {q:3,clk:90,est:1,lab:'FG',text:'Seahawks: Myers field goal after a Samuel fumble',sc:[21,26]},
+ {q:4,clk:660,est:1,lab:'TD',text:'49ers: Purdy 7-yd touchdown pass to Cooks, then a 2-point pass to Evans',sc:[29,26]},
+ {q:4,clk:330,est:1,lab:'FG',text:'Seahawks tie it with a field goal',sc:[29,29]},
+ {q:4,clk:116,lab:'FG',text:'49ers: Pineiro field goal puts San Francisco up three',sc:[32,29]},
+ {q:4,clk:35,est:1,lab:'STOP',text:'49ers: Mustapha stops Kupp one yard short on fourth down',sc:[32,29]}
+]};
+
+/* Formula 1, Singapore GP. Race start 5:00 AM PT, 62 laps. Leader win chance is a hand-set estimate. */
+const F1PL=[
+ {lap:1,lab:'START',text:'Verstappen defends the lead into Turn 1 from pole',wp:52},
+ {lap:7,lab:'VSC',text:'Virtual safety car as Bortoleto stops with a gearbox problem',wp:52},
+ {lap:19,lab:'PIT',text:'Hamilton pits first, on fresh softs',wp:54},
+ {lap:24,lab:'PIT',text:'Antonelli stops for mediums',wp:55},
+ {lap:25,lab:'PIT',text:'Leclerc stops for mediums',wp:57},
+ {lap:33,lab:'PIT',text:'Verstappen stops, soft to medium, and keeps the lead',wp:66},
+ {lap:37,lab:'VSC',text:'Virtual safety car as Stroll stops at Turn 15',wp:70},
+ {lap:38,lab:'PIT',text:'Leclerc and Antonelli take second stops under the VSC',wp:68,when:'~Lap 38'},
+ {lap:42,lab:'PIT',text:'Piastri stops again after a slow puncture',wp:72},
+ {lap:50,lab:'PASS',text:'Antonelli passes Norris, then Hamilton, to take third',wp:80,when:'Late'},
+ {lap:62,lab:'FINISH',text:'Verstappen wins by 7.3 seconds over Leclerc',wp:100}
+];
+function f1Game(mode,lap,x={}){
+  const base={id:'f1r',sport:'racing',lg:'F1',league:'Formula 1',series:'Formula 1',title:'Singapore GP · Race',net:'Apple TV',watch:['apple'],focus:'Leader'};
+  if(mode==='soon')return {...base,sub:'Lights out at 5:00 AM',status:'soon',time:'5:00 AM',pre:45,...x};
+  const end=mode==='final',L=end?62:lap,seen=F1PL.filter(p=>p.lap<=L);
+  const plays=seen.map(p=>({ago:end?0:Math.round((L-p.lap)/62*108),p:p.lap/62,when:p.when||'Lap '+p.lap,label:p.lab,text:p.text,wp:p.wp}));
+  if(end)return {...base,sub:'Verstappen wins · Leclerc +7.3s · Antonelli +24.6s',status:'final',time:'Sun 5:00 AM',prog:1,wp:100,pre:45,plays,...x};
+  return {...base,sub:'Lap '+L+' of 62',status:'live',clock:'L'+L,prog:L/62,pre:45,wp:74,plays,...x};
+}
+const nowF1=L=>Math.round(300+L/62*108);
+const F1Q={id:'f1q',sport:'racing',lg:'F1',league:'Formula 1',series:'Formula 1',title:'Singapore GP · Qualifying',sub:'Verstappen takes pole',status:'final',time:'Sat 5:00 AM',net:'Apple TV',watch:['apple']};
+const VAL9=fin('val9','basketball','WNBA · Semifinals','Valkyries','Aces',87,77,'Fri 6:30 PM','Peacock',['peacock'],{focus:'Valkyries'});
+
+const CAL_T=3582,SF_T=3600-116,F1_LAP=44,N_PRE=730;
+const N_CAL=nowFb(CAL,CAL_T),N_SF=nowFb(SF,SF_T),N_F1=nowF1(F1_LAP);
+const SCEN={
+ sat:{label:'SAT '+fmtT(N_PRE).replace(' PM',''),title:'SAT OCT 10 · '+fmtT(N_PRE),now:N_PRE,
+  inbox:[
+   {t:'Cal hosts Virginia Tech at 12:30 PM',d:'ACC Network · on ESPN, in your apps',when:'12:05 PM'},
+   {t:'49ers at Seahawks is on FOX tomorrow',d:'Not in your apps · YouTube TV, Fubo or Fox One',when:'Earlier'},
+   {t:'Verstappen on pole for Singapore',d:'Race starts Sunday 5:00 AM · Apple TV',when:'Earlier'}],
+  games:[fbGame(CAL,'soon'),F1Q,VAL9,f1Game('soon',0,{day:1}),fbGame(SF,'soon',0,{day:1})]},
+ satlive:{label:'SAT '+fmtT(N_CAL).replace(' PM',''),title:'SAT OCT 10 · '+fmtT(N_CAL),now:N_CAL,
+  inbox:[
+   {t:'Cal leads Virginia Tech 25–20',d:'Q4 0:18 · ACC Network on ESPN',when:fmtT(N_CAL)},
+   {t:'Emory 2-yard TD ends a 75-yard, 57-second drive',d:'Cal retakes the lead',when:fmtT(N_CAL)},
+   {t:'Virginia Tech retakes the lead 20–19',d:'Q4 · ACC Network on ESPN',when:'Earlier'}],
+  games:[fbGame(CAL,'live',CAL_T),F1Q,VAL9,f1Game('soon',0,{day:1}),fbGame(SF,'soon',0,{day:1})]},
+ sunam:{label:'SUN '+fmtT(N_F1).replace(' AM',''),title:'SUN OCT 11 · '+fmtT(N_F1),now:N_F1,
+  inbox:[
+   {t:'Formula 1: Verstappen leads on lap 44',d:'Apple TV',when:fmtT(N_F1)},
+   {t:'Piastri stops again with a slow puncture',d:'Lap 42 · Apple TV',when:fmtT(N_F1)},
+   {t:'49ers at Seahawks starts at 1:25 PM',d:'FOX · not in your apps',when:'6:00 AM'}],
+  games:[f1Game('live',F1_LAP),fbGame(CAL,'final'),F1Q,VAL9,fbGame(SF,'soon')]},
+ sunpm:{label:'SUN '+fmtT(N_SF).replace(' PM',''),title:'SUN OCT 11 · '+fmtT(N_SF),now:N_SF,
+  inbox:[
+   {t:'49ers lead Seahawks 32–29',d:'Q4 1:56 · FOX, not in your apps',when:fmtT(N_SF)},
+   {t:'Seahawks tie it at 29',d:'Q4 · FOX',when:'Earlier'},
+   {t:'Verstappen wins the Singapore GP',d:'Final · Apple TV',when:'6:50 AM'}],
+  games:[fbGame(SF,'live',SF_T),f1Game('final'),fbGame(CAL,'final'),VAL9]},
+ mon:{label:'MON 9:00',title:'MON OCT 12 · 9:00 AM',now:540,
+  inbox:[
+   {t:'Final: 49ers 32, Seahawks 29',d:'San Francisco is 5–0',when:'Sun'},
+   {t:'Final: Cal 25, Virginia Tech 20',d:'Cal is 3–3',when:'Sat'},
+   {t:'Final: Verstappen wins in Singapore',d:'Leclerc second, Antonelli third',when:'Sun'}],
+  games:[fbGame(SF,'final'),f1Game('final'),fbGame(CAL,'final'),VAL9]}
+};
+const TEAMS=[
+ ['Cal','College football',{text:'Sat Oct 17 · 7:30 PM vs Wake Forest'}],
+ ['Virginia Tech','College football'],['Stanford','College football'],
+ ['49ers','NFL',{text:'Mon Oct 19 · vs Washington'}],
+ ['Seahawks','NFL',{text:'Thu night · at Denver'}],
+ ['Valkyries','WNBA',{text:'Sat Oct 17 · 12:30 PM · Finals Game 1 vs Dream',watch:['peacock','yttv','fubo'],net:'NBC'}],
+ ['Dream','WNBA',{text:'Sat Oct 17 · 12:30 PM · Finals Game 1 at Valkyries',watch:['peacock','yttv','fubo'],net:'NBC'}],
+ ['Aces','WNBA'],
+ ['Warriors','NBA'],
+ ['Formula 1','Racing']
+];
+
+const ALERT_OPTS=[
+ ['start','Game starts','15 minutes before, for starred teams'],
+ ['score','Score changes','Goals, runs and touchdowns for starred teams'],
+ ['swing','Big swings','Win chance moves 15 points or more on one play'],
+ ['final','Final scores','When a starred team finishes'],
+ ['gap','Missing app','A starred team is on an app you don\'t have']
+];
+
+const store={get(k,d){try{const v=localStorage.getItem('wio3.'+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem('wio3.'+k,JSON.stringify(v))}catch(e){}}};
+const state={
+  tab:'now',sport:'all',query:'',
+  scen:SCEN[store.get('scen','sat')]?store.get('scen','sat'):'sat',
+  onlyMine:store.get('onlyMine',false),
+  owned:new Set(store.get('owned',['peacock','prime','apple','espn'])),
+  favs:new Set(store.get('favs',['Cal','49ers','Valkyries','Formula 1'])),
+  reminders:new Set(store.get('reminders',[])),
+  alerts:Object.assign({start:true,score:false,swing:true,final:true,gap:true},store.get('alerts',{})),
+  read:store.get('read',false)
+};
+const saveLocal=()=>{store.set('owned',[...state.owned]);store.set('favs',[...state.favs]);store.set('reminders',[...state.reminders]);store.set('alerts',state.alerts);store.set('read',state.read);store.set('onlyMine',state.onlyMine);store.set('scen',state.scen)};
+const save=()=>{saveLocal();schedulePush()};
+const scen=()=>SCEN[state.scen];
+const games=()=>scen().games;
+const NOW_=()=>scen().now;
+const svcName=id=>SERVICES.find(s=>s.id===id).name;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const abbr=n=>AB[n]||n.replace(/[^A-Za-z]/g,'').slice(0,3).toUpperCase();
+const mins=t=>{const m=/(\d+):(\d+)\s*(AM|PM)/.exec(t);let h=(+m[1])%12;if(m[3]==='PM')h+=12;return h*60+(+m[2])};
+const until=g=>(g.day||0)*1440+mins(g.time)-NOW_();
+const canWatch=g=>g.watch.some(w=>state.owned.has(w));
+const ownedSvc=g=>g.watch.find(w=>state.owned.has(w));
+const isFav=t=>t!=null&&state.favs.has(t);
+const favOf=g=>[g.series,g.away,g.home].find(isFav);
+const rank=g=>g.status==='live'?0:g.status==='soon'?1+(g.day||0)*.5:3;
+const gameFor=team=>games().filter(g=>g.away===team||g.home===team||g.series===team).sort((a,b)=>rank(a)-rank(b))[0];
+const focusOf=g=>g.focus||g.home;
+const W=(g,t,w)=>w==null?null:(t===focusOf(g)?w:100-w);
+const view=document.getElementById('view');
+
+function ico(src,text,color,cls=''){return '<span class="ico '+cls+'" style="--ic:'+(color||'var(--amber)')+'"><span class="mono" aria-hidden="true">'+esc(text)+'</span><img src="icons/'+src+'.png" alt="" loading="lazy"></span>'}
+const svcIco=(id,cls)=>{const v=SERVICES.find(x=>x.id===id);return ico('app-'+id,v.ab,v.c,cls)};
+const teamIco=(n,cls)=>ico('team-'+slug(n),abbr(n).slice(0,3),null,cls);
+document.addEventListener('error',e=>{if(e.target&&e.target.tagName==='IMG'&&e.target.closest('.ico'))e.target.remove()},true);
+const led=(v,cls='',ghost='88',fx=s=>s)=>`<span class="led ${cls}"><span class="ghost" aria-hidden="true">${ghost}</span><span class="on">${v===''||v==null?'':fx(esc(v))}</span></span>`;
+function updatePip(){document.getElementById('pip').hidden=state.read}
+
+/* win chance helpers */
+function series(g,t){
+  const pts=[{p:0,wp:W(g,t,g.pre)}];
+  (g.plays||[]).forEach(pl=>{if(pl.wp!=null)pts.push({p:pl.p,wp:W(g,t,pl.wp),play:true})});
+  pts.push({p:g.prog,wp:W(g,t,g.wp),now:true});
+  return pts;
+}
+function swings(g){let prev=g.pre;return (g.plays||[]).map(pl=>{if(pl.wp==null)return null;const d=pl.wp-prev;prev=pl.wp;return d})}
+function wpTrend(g,t,back=15){let base=g.pre;(g.plays||[]).forEach(pl=>{if(pl.wp!=null&&pl.ago>=back)base=pl.wp});const raw=g.wp-base;return t===focusOf(g)?raw:-raw}
+function spark(g,t){
+  const Wd=300,H=60,pad=5;
+  const pts=series(g,t);
+  const X=p=>pad+p*(Wd-2*pad),Y=w=>pad+(1-w/100)*(H-2*pad);
+  const d=pts.map((q,i)=>`${i?'L':'M'}${X(q.p).toFixed(1)} ${Y(q.wp).toFixed(1)}`).join('');
+  const last=pts[pts.length-1];
+  const area=`${d}L${X(last.p).toFixed(1)} ${H-pad}L${X(0).toFixed(1)} ${H-pad}Z`;
+  const marks=pts.filter(q=>q.play).map(q=>`<circle class="pt" cx="${X(q.p).toFixed(1)}" cy="${Y(q.wp).toFixed(1)}" r="2.6"/>`).join('');
+  const lx=X(last.p).toFixed(1),ly=Y(last.wp).toFixed(1);
+  return `<svg class="spark${g.status==='live'?' live':''}" viewBox="0 0 ${Wd} ${H}" role="img" aria-label="Win chance for ${esc(t)}: ${pts[0].wp}% at the start, ${last.wp}% now">
+    <line class="grid" x1="${pad}" x2="${Wd-pad}" y1="${Y(75).toFixed(1)}" y2="${Y(75).toFixed(1)}"/>
+    <line class="grid" x1="${pad}" x2="${Wd-pad}" y1="${Y(25).toFixed(1)}" y2="${Y(25).toFixed(1)}"/>
+    <line class="mid" x1="${pad}" x2="${Wd-pad}" y1="${Y(50).toFixed(1)}" y2="${Y(50).toFixed(1)}"/>
+    <path class="area" d="${area}"/><path class="line" pathLength="1" d="${d}"/>${marks}
+    <circle class="halo" cx="${lx}" cy="${ly}" r="8"/><circle class="nowpt" cx="${lx}" cy="${ly}" r="4.5"/></svg>`;
+}
+function trendHTML(tr,suffix=' in 15 min'){
+  if(!tr)return `<span class="trend">Steady</span>`;
+  return `<span class="trend ${tr>0?'up':'down'}">${tr>0?'▲':'▼'} ${Math.abs(tr)}${suffix}</span>`;
+}
+function wpBlock(g,t){
+  t=t||focusOf(g);
+  return `<div class="wp"><div class="wp-top"><span class="lab">${g.status==='final'?'Win chance, full game':g.title?'Leader win chance':'Win chance'}</span><span class="wp-now"><small>${esc(abbr(t))}</small>${W(g,t,g.wp)}%</span>${g.status==='final'?'':trendHTML(wpTrend(g,t))}</div>${spark(g,t)}</div>`;
+}
+function swingHTML(g,d){
+  if(d==null||d===0)return '<span></span>';
+  return `<span class="swing ${d>0?'up':'down'}">${d>0?'▲':'▼'} ${Math.abs(d)}<small>${esc(abbr(focusOf(g)))} WIN %</small></span>`;
+}
+
+/* shared pieces */
+function statusHTML(g){
+  if(g.status==='live')return `<span class="tag live"><span class="dot"></span>LIVE</span><span class="clock">${blinkColon(esc(g.clock))}</span>`;
+  if(g.status==='final')return `<span class="tag">FINAL</span><span class="clock dim">${esc(g.time)}</span>`;
+  return `<span class="clock">${g.day?'TMRW ':''}${esc(g.time)}</span>`;
+}
+function watchHTML(g){
+  const ordered=[...g.watch].sort((a,b)=>state.owned.has(b)-state.owned.has(a));
+  return `<div class="watch"><span class="net">${esc(g.net)}</span>${ordered.map(w=>`<span class="svc ${state.owned.has(w)?'own':''}">${svcIco(w)}${esc(svcName(w))}</span>`).join('')}</div>`;
+}
+function wellHTML(g){
+  if(g.title)return `<div class="well"><div class="event"><div class="t">${teamIco(g.series)} ${esc(g.title)}</div><div class="s">${esc(g.sub)}</div></div></div>`;
+  return `<div class="well"><span class="team ${isFav(g.away)?'fav':''} ${g.away.length>10?'long':''}">${teamIco(g.away)} ${esc(g.away)}</span>${led(g.as??'')}
+          <span class="team ${isFav(g.home)?'fav':''} ${g.home.length>10?'long':''}">${teamIco(g.home)} ${esc(g.home)}</span>${led(g.hs??'')}</div>`;
+}
+function cardHTML(g){
+  return `<button class="card" data-game="${g.id}">
+    <div class="head"><span class="league">${esc(g.league)}</span><span class="status">${statusHTML(g)}</span></div>
+    ${wellHTML(g)}${watchHTML(g)}
+  </button>`;
+}
+function filtered(list){
+  return list.filter(g=>(state.sport==='all'||g.sport===state.sport)&&(!state.onlyMine||canWatch(g)));
+}
+function chipsHTML(pool){
+  return `<div class="chips" role="group" aria-label="Filter by sport">${SPORTS.map(([id,label])=>{
+    const n=id==='all'?pool.length:pool.filter(g=>g.sport===id).length;
+    if(id!=='all'&&!n)return '';
+    return `<button class="chip" data-sport="${id}" aria-pressed="${state.sport===id}">${label}<span class="n">${n}</span></button>`;}).join('')}</div>
+  <div class="toggle-row"><span id="mineLbl">Only games on my apps</span><button class="switch" role="switch" id="mine" aria-labelledby="mineLbl" aria-checked="${state.onlyMine}"></button></div>`;
+}
+
+/* On Now: my teams */
+function heroGames(){
+  const out=[];
+  games().forEach(g=>{
+    const fav=favOf(g);
+    if(!fav)return;
+    if(g.status==='live')out.push({g,fav,order:-1});
+    else if(g.status==='soon'){const d=until(g);if(d<=180)out.push({g,fav,order:d})}
+  });
+  return out.sort((a,b)=>a.order-b.order);
+}
+function laterFavs(){
+  const out=[];
+  games().forEach(g=>{
+    if(g.status!=='soon')return;
+    const fav=favOf(g);
+    if(fav&&until(g)>180)out.push({g,fav});
+  });
+  return out.sort((a,b)=>until(a.g)-until(b.g));
+}
+function lastPlayHTML(g){
+  const pl=(g.plays||[])[g.plays.length-1];if(!pl)return '';
+  const sw=swings(g);
+  return `<div class="lastplay${pl.ago<=2&&g.status==='live'?' fresh':''}"><span class="pill">${esc(pl.label)}</span><span class="lp-txt">${esc(pl.text)}<small>${esc(pl.when)} · ${pl.ago} min ago</small></span>${swingHTML(g,sw[sw.length-1])}</div>`;
+}
+function heroHTML({g,fav}){
+  const owned=ownedSvc(g);
+  if(g.status==='live'){
+    return `<section class="hero liveh"><div class="bulbs" aria-hidden="true"></div><button class="hero-main" data-game="${g.id}">
+      <div class="head"><span class="league">${esc(g.league)}</span><span class="status">${statusHTML(g)}</span></div>
+      ${wellHTML(g)}
+      ${g.wp!=null?wpBlock(g,g.title?focusOf(g):fav):''}
+      ${lastPlayHTML(g)}
+    </button>
+    <div class="hero-foot">${watchHTML(g)}<button class="btn sm" data-watch="${g.id}">${owned?'Watch':'Options'}</button></div></section>`;
+  }
+  const d=until(g),cd=Math.floor(d/60)+':'+String(d%60).padStart(2,'0');
+  const t=g.title?focusOf(g):fav,pre=g.pre!=null?W(g,t,g.pre):null;
+  return `<section class="hero"><button class="hero-main" data-game="${g.id}">
+    <div class="head"><span class="league">${esc(g.league)}</span><span class="status">${statusHTML(g)}</span></div>
+    ${wellHTML(g)}
+    <div class="count"><span class="lab">Starts in</span>${led(cd,'','8:88',blinkColon)}</div>
+    ${pre!=null?`<div class="wp"><div class="wp-top"><span class="lab">Pregame win chance</span><span class="wp-now"><small>${esc(abbr(t))}</small>${pre}%</span></div><div class="wpbar"><i style="width:${pre}%"></i></div></div>`:''}
+  </button>
+  <div class="hero-foot">${watchHTML(g)}<button class="btn ghost sm" data-remindcard="${g.id}">${state.reminders.has(g.id)?'Reminder on':'Remind me'}</button></div></section>`;
+}
+
+/* On Now: score wall and plays */
+function wpRow(g){
+  const t=focusOf(g),tr=wpTrend(g,t);
+  const tt=tr?`<span class="trend ${tr>0?'up':'down'}">${tr>0?'▲':'▼'}${Math.abs(tr)}</span>`:'';
+  return `<div class="sb-wp"><span>${esc(abbr(t))} ${g.wp}%</span><div class="wpbar"><i style="width:${g.wp}%"></i></div>${tt}</div>`;
+}
+function sboxHTML(g){
+  const owned=ownedSvc(g);
+  const lamp=`<span class="lamp ${owned?'own':''}"><span>${owned?esc(svcName(owned)):'Not in your apps'}</span></span>`;
+  const mid=g.title
+    ?`<div class="sb-ev"><b>${esc(g.title)}</b><span>${esc(g.sub)}</span></div>${g.wp!=null?wpRow(g):''}`
+    :`<div class="sb-rows"><span class="ab ${isFav(g.away)?'fav':''}">${teamIco(g.away)}${esc(abbr(g.away))}</span>${led(g.as??'')}<span class="ab ${isFav(g.home)?'fav':''}">${teamIco(g.home)}${esc(abbr(g.home))}</span>${led(g.hs??'')}</div>${wpRow(g)}`;
+  return `<button class="sbox" data-game="${g.id}"><div class="sb-head"><span class="sb-lg">${esc(g.lg)}${isFav(g.series)?' ★':''}</span><span class="sb-clk">${blinkColon(esc(g.clock))}</span></div>${mid}${lamp}</button>`;
+}
+function matchup(g){return g.title?`${g.lg} · ${g.title}`:`${abbr(g.away)} ${g.as}–${g.hs} ${abbr(g.home)}`}
+function playHTML({g,pl,d}){
+  const owned=ownedSvc(g);
+  return `<button class="play${pl.ago<=2?' fresh':''}" data-game="${g.id}">
+    <span class="ago">${pl.ago}<small>MIN AGO</small></span>
+    <span class="pbody">
+      <span class="l1"><span class="pill">${esc(pl.label)}</span><span class="mu">${esc(matchup(g))}</span></span>
+      <span class="ptx">${esc(pl.text)} <span class="when">· ${esc(pl.when)}</span></span>
+      <span class="lamp ${owned?'own':''}"><span>${owned?esc(svcName(owned)):esc(g.net)+' · not in your apps'}</span></span>
+    </span>
+    ${swingHTML(g,d)}
+  </button>`;
+}
+function renderNow(){
+  const heroes=heroGames(),later=laterFavs(),myFinals=games().filter(g=>g.status==='final'&&favOf(g));
+  const live=games().filter(g=>g.status==='live');
+  const pool=filtered(live);
+  const favScore=g=>(favOf(g)?1:0);
+  const sorted=[...pool].sort((a,b)=>favScore(b)-favScore(a));
+  const items=pool.flatMap(g=>{const sw=swings(g);return (g.plays||[]).map((pl,i)=>({g,pl,d:sw[i]}))}).sort((a,b)=>a.pl.ago-b.pl.ago).slice(0,12);
+  const heroEmpty=state.favs.size?`None of your teams play in the next 3 hours.`:`Star a team in My Teams and its game shows up here when it is live or about to start.`;
+  view.innerHTML=`
+    <div class="section"><h2>My teams · live and up next</h2>
+      ${heroes.length?`<div class="list">${heroes.map(heroHTML).join('')}</div>`:`<div class="empty">${heroEmpty}</div>`}
+      ${later.length?`<p class="sub">Next up: ${later.slice(0,3).map(({g,fav})=>`${esc(fav)} · ${g.day?'Tomorrow ':''}${esc(g.time)}`).join(' · ')}</p>`:''}
+    </div>
+    ${!heroes.length&&myFinals.length?`<div class="section"><h2>My teams · final</h2><div class="list">${myFinals.map(cardHTML).join('')}</div></div>`:''}
+    <div class="section"><h2>Live feed</h2>${chipsHTML(live)}</div>
+    <div class="section"><h2>Live scoreboard</h2>
+      ${sorted.length?`<div class="sgrid">${sorted.map(sboxHTML).join('')}</div>`:`<div class="empty">Nothing live matches these filters. Turn off <b>Only games on my apps</b> or pick another sport.</div>`}
+    </div>
+    <div class="section"><h2>Scoring plays</h2>
+      ${items.length?`<div class="plays">${items.map(playHTML).join('')}</div>`:`<div class="empty">No scoring plays match these filters yet.</div>`}
+      <p class="sub">Win chance is WhereItsOn\'s own estimate from the score, time left and pregame odds. Green lamp means you can watch on an app you have.</p>
+    </div>
+    <p class="sample">Snapshot · Oct 9–12, 2026 · scores from public recaps</p>`;
+}
+
+/* other tabs */
+function renderLater(){
+  const pool=games().filter(g=>g.status!=='live');
+  const list=filtered(pool);
+  const today=list.filter(g=>g.status==='soon'&&!g.day);
+  const tmrw=list.filter(g=>g.status==='soon'&&g.day).sort((a,b)=>mins(a.time)-mins(b.time));
+  const groups={};today.sort((a,b)=>mins(a.time)-mins(b.time)).forEach(g=>(groups[g.time]??=[]).push(g));
+  const finals=list.filter(g=>g.status==='final');
+  view.innerHTML=`
+    <div class="section"><h1>Coming up</h1><p class="sub">${pool.filter(g=>g.status==='soon'&&!g.day).length} games later today · ${pool.filter(g=>g.day).length} tomorrow · Pacific time</p></div>
+    <div class="section">${chipsHTML(pool)}</div>
+    ${Object.keys(groups).length?Object.entries(groups).map(([t,gs])=>`<div class="section"><div class="slot">${t}</div><div class="list">${gs.map(cardHTML).join('')}</div></div>`).join('')
+      :`<div class="empty">No more games today match these filters.</div>`}
+    ${tmrw.length?`<div class="section"><div class="slot">TOMORROW</div><div class="list">${tmrw.map(cardHTML).join('')}</div></div>`:''}
+    ${finals.length?`<div class="section"><h2>Earlier</h2><div class="list">${finals.map(cardHTML).join('')}</div></div>`:''}
+    <p class="sample">Snapshot · Oct 9–12, 2026 · scores from public recaps</p>`;
+}
+function teamLine(name,extra){
+  const g=gameFor(name);
+  if(g&&!(g.status==='final'&&extra)){
+    const ev=!!g.title;
+    const opp=ev?g.title:(g.away===name?'@ '+g.home:'vs '+g.away);
+    const where=ownedSvc(g);
+    if(g.status==='live')return {cls:'live',txt:`Live now ${opp} · ${where?svcName(where):g.net}`,game:g.id};
+    if(g.status==='final')return {cls:'',txt:ev?`Final · ${g.title}`:`Final ${opp} · ${g.away===name?g.as+'–'+g.hs:g.hs+'–'+g.as}`,game:g.id};
+    return {cls:'',txt:`${g.day?'Tomorrow':'Today'} ${g.time} ${opp} · ${where?svcName(where):g.net+' (not in your apps)'}`,game:g.id};
+  }
+  if(extra){const where=extra.watch&&extra.watch.find(w=>state.owned.has(w));
+    return {cls:'',txt:extra.watch?`Next: ${extra.text} · ${where?svcName(where):extra.net}`:extra.text}}
+  return {cls:'',txt:'No game in this window'};
+}
+function teamRow([name,league,extra]){
+  const l=teamLine(name,extra);
+  return `<div class="row">${teamIco(name,'lg')}
+    <button class="info" ${l.game?`data-game="${l.game}"`:''}><span class="name">${esc(name)} <small>${esc(league)}</small></span><span class="what ${l.cls}">${esc(l.txt)}</span></button>
+    <button class="star" data-fav="${esc(name)}" aria-pressed="${isFav(name)}" aria-label="${isFav(name)?'Remove':'Add'} ${esc(name)} ${isFav(name)?'from':'to'} my teams">${isFav(name)?'★':'☆'}</button></div>`;
+}
+function renderTeams(){
+  const q=state.query.trim().toLowerCase();
+  const favs=TEAMS.filter(t=>isFav(t[0]));
+  const results=q?TEAMS.filter(t=>(t[0]+' '+t[1]).toLowerCase().includes(q)):[];
+  view.innerHTML=`
+    <div class="section"><h1>My teams</h1><p class="sub">Star a team or series to pin its game to the top of On Now.</p></div>
+    <input class="search" id="q" type="search" placeholder="Find a team, series or league" value="${esc(state.query)}" aria-label="Find a team, series or league">
+    ${q?`<div class="section"><h2>Results</h2><div class="list">${results.length?results.map(teamRow).join(''):`<div class="empty">No match for “${esc(state.query)}”. Try a city, nickname or league.</div>`}</div></div>`:''}
+    <div class="section"><h2>Starred</h2><div class="list">${favs.length?favs.map(teamRow).join(''):`<div class="empty">Nothing starred yet. Search above to add a team.</div>`}</div></div>
+    ${!q?`<div class="section"><h2>Popular near you</h2><div class="list">${TEAMS.filter(t=>['Stanford','Warriors','Dream','Aces'].includes(t[0])&&!isFav(t[0])).map(teamRow).join('')}</div></div>`:''}`;
+}
+function renderApps(){
+  view.innerHTML=`
+    <div class="section"><h1>My apps</h1><p class="sub">Turn on the services you pay for. Use the filter on On Now to see only games you can watch.</p></div>
+    <div class="panel">${SERVICES.map(s=>{
+      const n=games().filter(g=>g.status!=='final'&&g.watch.includes(s.id)).length;
+      return `<div class="approw">${svcIco(s.id,'lg')}<div class="info"><div class="nm" id="lbl-${s.id}">${esc(s.name)}</div><div class="what">${s.kind} · ${n?n+' game'+(n>1?'s':'')+' ahead':'no sports in this window'}</div></div>
+      <button class="switch" role="switch" data-svc="${s.id}" aria-labelledby="lbl-${s.id}" aria-checked="${state.owned.has(s.id)}"></button></div>`}).join('')}</div>
+    <div class="note">In the full app, Android can detect installed streaming apps so this list fills itself in.</div>`;
+}
+function renderDemo(){
+  document.getElementById('demo').innerHTML=`<span class="lab">Weekend moment</span>${Object.entries(SCEN).map(([id,s])=>`<button class="chip" data-scen="${id}" aria-pressed="${state.scen===id}">${s.label}</button>`).join('')}`;
+  document.getElementById('daytag').innerHTML=blinkColon(esc(scen().title));
+}
+function render(){
+  renderDemo();
+  ({now:renderNow,later:renderLater,teams:renderTeams,apps:renderApps,review:renderReview})[state.tab]();
+  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.tab===state.tab));
+  updatePip();
+}
+
+/* sheets */
+function toast(msg){
+  document.querySelector('.toast')?.remove();
+  const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);
+  setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),220)},2400);
+}
+function showSheet(inner,handler,quiet){
+  const scrim=document.createElement('div');scrim.className='scrim';
+  scrim.innerHTML=`<div class="sheet" role="dialog" aria-modal="true">${inner}</div>`;
+  if(quiet)scrim.style.animation=scrim.firstChild.style.animation='none';
+  document.body.appendChild(scrim);
+  scrim.addEventListener('click',e=>{
+    if(scrim.classList.contains('closing'))return;
+    if(e.target===scrim||e.target.closest('[data-close]'))return closeSheet(scrim);
+    handler(e,scrim);
+  });
+  if(!quiet)drawCharts(scrim,280);
+  return scrim;
+}
+function closeSheet(scrim){
+  if(!scrim||scrim.classList.contains('closing'))return;
+  if(RMQ.matches)return scrim.remove();
+  scrim.style.animation=scrim.firstChild.style.animation='';
+  scrim.classList.add('closing');setTimeout(()=>scrim.remove(),230);
+}
+function openSheet(id,quiet){
+  const g=games().find(x=>x.id===id);if(!g)return;
+  const owned=g.watch.filter(w=>state.owned.has(w)),other=g.watch.filter(w=>!state.owned.has(w));
+  const head=g.title
+    ?`<div class="bigboard"><div class="side" style="grid-column:1/-1"><span class="nm">${esc(g.title)}</span><span class="sub">${esc(g.sub)}</span></div></div>`
+    :`<div class="bigboard">
+        <div class="side"><span class="lab">Away</span>${teamIco(g.away,'md')}<span class="nm">${esc(g.away)}</span>${led(g.as??'')}</div>
+        <div class="side"><span class="lab">Home</span>${teamIco(g.home,'md')}<span class="nm">${esc(g.home)}</span>${led(g.hs??'')}</div>
+      </div>`;
+  let odds='';
+  if((g.status==='live'||(g.status==='final'&&g.plays&&g.plays.length))&&g.wp!=null)odds=wpBlock(g,g.title?focusOf(g):([g.away,g.home].find(isFav)||focusOf(g)));
+  else if(g.status==='soon'&&g.pre!=null){const t=g.title?focusOf(g):([g.away,g.home].find(isFav)||focusOf(g)),p=W(g,t,g.pre);
+    odds=`<div class="wp"><div class="wp-top"><span class="lab">Pregame win chance</span><span class="wp-now"><small>${esc(abbr(t))}</small>${p}%</span></div><div class="wpbar"><i style="width:${p}%"></i></div></div>`}
+  let plays='';
+  if(g.plays&&g.plays.length){
+    const sw=swings(g);
+    plays=`<h2>Scoring plays</h2><div>${g.plays.map((pl,i)=>({pl,d:sw[i]})).reverse().map(({pl,d})=>`<div class="splay"><span class="w">${esc(pl.when)}${pl.approx?'<small class="apx">approx</small>':''}</span><span class="tx"><span class="pill">${esc(pl.label)}</span>${esc(pl.text)}</span>${swingHTML(g,d)}</div>`).join('')}</div>`;
+  }
+  const reminded=state.reminders.has(id);
+  showSheet(`
+    <span class="grab"></span>
+    <div class="head" style="border:0;background:none;padding:0"><span class="league">${esc(g.league)}</span><span class="status">${statusHTML(g)}</span></div>
+    ${head}${odds}${plays}
+    <h2>Where to watch · ${esc(g.net)}</h2>
+    ${owned.map(w=>`<div class="opt">${svcIco(w,'md')}<div class="info"><div class="nm">${esc(svcName(w))}</div><div class="what">In your apps</div></div><button class="btn" data-open="${w}">${g.status==='live'?'Watch':'Open'}</button></div>`).join('')}
+    ${other.map(w=>`<div class="opt">${svcIco(w,'md')}<div class="info"><div class="nm">${esc(svcName(w))}</div><div class="what">Not in your apps</div></div><button class="btn ghost" data-add="${w}">I have it</button></div>`).join('')}
+    ${!owned.length&&g.watch.length?`<div class="note">None of your apps carry this game. Mark a service above if you have it.</div>`:''}
+    <div class="actions">${g.status==='soon'?`<button class="btn ghost" data-remind>${reminded?'Reminder on':'Remind me'}</button>`:''}<button class="btn ghost" data-close>Close</button></div>`,
+  (e,scrim)=>{
+    const o=e.target.closest('[data-open]');if(o){toast(`In the live app, this opens ${svcName(o.dataset.open)} straight to the game.`);return}
+    const a=e.target.closest('[data-add]');if(a){state.owned.add(a.dataset.add);save();scrim.remove();render();openSheet(id,true);toast(`${svcName(a.dataset.add)} added to your apps`);return}
+    const r=e.target.closest('[data-remind]');if(r){
+      if(state.reminders.has(id)){state.reminders.delete(id);r.textContent='Remind me';toast('Reminder removed')}
+      else{state.reminders.add(id);r.textContent='Reminder on';toast(`Reminder set for 15 minutes before ${g.time}`)}
+      save();render();
+    }
+  },quiet);
+}
+function openAlerts(){
+  state.read=true;save();updatePip();
+  const all=Object.values(SCEN).flatMap(s=>s.games);
+  const rem=[...state.reminders].map(id=>all.find(g=>g.id===id)).filter(Boolean);
+  const remName=r=>r.title?r.title:`${r.away} @ ${r.home}`;
+  const remHTML=r=>`<div class="opt" data-rem="${r.id}"><div class="info"><div class="nm">${esc(remName(r))}</div><div class="what">15 min before · ${r.day?'Tomorrow ':''}${esc(r.time)}</div></div><button class="btn ghost sm" data-unrem="${r.id}">Off</button></div>`;
+  showSheet(`
+    <span class="grab"></span>
+    <div class="sheet-title">Alerts</div>
+    <h2>Recent</h2>
+    ${scen().inbox.map(n=>`<div class="opt"><div class="info"><div class="nm">${esc(n.t)}</div><div class="what">${esc(n.d)}</div></div><span class="when">${esc(n.when)}</span></div>`).join('')}
+    <h2>My reminders</h2>
+    <div class="section" id="remList">${rem.length?rem.map(remHTML).join(''):`<div class="empty">No reminders yet. Open an upcoming game and tap Remind me.</div>`}</div>
+    <h2>Notify me about</h2>
+    ${ALERT_OPTS.map(([k,t,d])=>`<div class="opt"><div class="info"><div class="nm" id="al-${k}">${t}</div><div class="what">${d}</div></div><button class="switch" role="switch" data-alert="${k}" aria-labelledby="al-${k}" aria-checked="${!!state.alerts[k]}"></button></div>`).join('')}
+    <div class="note">In the full app, Android asks permission to send notifications the first time you turn one on.</div>
+    <div class="actions"><button class="btn ghost" data-close>Close</button></div>`,
+  (e)=>{
+    const sw=e.target.closest('[data-alert]');if(sw){const k=sw.dataset.alert;state.alerts[k]=!state.alerts[k];sw.setAttribute('aria-checked',state.alerts[k]);save();return}
+    const u=e.target.closest('[data-unrem]');if(u){
+      state.reminders.delete(u.dataset.unrem);save();
+      u.closest('[data-rem]').remove();
+      const list=document.getElementById('remList');
+      if(!list.children.length)list.innerHTML=`<div class="empty">No reminders yet. Open an upcoming game and tap Remind me.</div>`;
+      render();
+    }
+  });
+}
+
+document.addEventListener('click',e=>{
+  if(e.target.closest('.scrim,.intro'))return;
+  if(e.target.closest('[data-intro]')){playIntro();return}
+  if(e.target.closest('[data-bell]')){openAlerts();return}
+  const sc=e.target.closest('[data-scen]');if(sc){const moved=state.scen!==sc.dataset.scen;state.scen=sc.dataset.scen;state.sport='all';state.read=false;save();render();if(moved)sceneFX();return}
+  const tab=e.target.closest('.tab');if(tab){const from=state.tab;if(tab.dataset.tab==='review'&&state.tab!=='review')state.from=state.tab;state.tab=tab.dataset.tab;state.sport='all';render();document.getElementById('scroll').scrollTop=0;window.scrollTo(0,0);if(from!==state.tab)tabFX(from,state.tab);return}
+  const chip=e.target.closest('[data-sport]');if(chip){state.sport=chip.dataset.sport;render();return}
+  if(e.target.closest('#mine')){state.onlyMine=!state.onlyMine;save();render();return}
+  const sv=e.target.closest('[data-svc]');if(sv){const id=sv.dataset.svc;state.owned.has(id)?state.owned.delete(id):state.owned.add(id);save();render();return}
+  const fav=e.target.closest('[data-fav]');if(fav){const n=fav.dataset.fav;isFav(n)?state.favs.delete(n):state.favs.add(n);save();render();return}
+  const wt=e.target.closest('[data-watch]');if(wt){
+    const g=games().find(x=>x.id===wt.dataset.watch),o=ownedSvc(g);
+    if(o)toast(`In the live app, this opens ${svcName(o)} straight to the game.`);else openSheet(g.id);
+    return}
+  const rc=e.target.closest('[data-remindcard]');if(rc){
+    const id=rc.dataset.remindcard,g=games().find(x=>x.id===id);
+    if(state.reminders.has(id)){state.reminders.delete(id);toast('Reminder removed')}else{state.reminders.add(id);toast(`Reminder set for 15 minutes before ${g.time}`)}
+    save();render();return}
+  const kd=e.target.closest('[data-kind]');if(kd){state.noteKind=kd.dataset.kind;document.querySelectorAll('[data-kind]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.kind===state.noteKind));return}
+  const ns=e.target.closest('#noteSend');if(ns){sendNote(ns);return}
+  const nd=e.target.closest('[data-note-done]');if(nd){toggleDone(nd.dataset.noteDone);return}
+  const nx=e.target.closest('[data-note-del]');if(nx){deleteNote(nx.dataset.noteDel);return}
+  if(e.target.closest('[data-shared]')){toggleShared();return}
+  const gm=e.target.closest('[data-game]');if(gm){openSheet(gm.dataset.game)}
+});
+document.addEventListener('input',e=>{
+  if(e.target.id==='q'){state.query=e.target.value;const pos=e.target.selectionStart;render();const q=document.getElementById('q');q.focus();q.setSelectionRange(pos,pos)}
+});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(introFinish)return introFinish();closeSheet(document.querySelector('.scrim:not(.closing)'))});
+
+/* shared setup and review notes (db + user capabilities; the page works without them) */
+const CLOUD={db:null,user:null,me:null,canWrite:null,notes:[],sharedOn:store.get('sharedOn',true)};
+const TABNAMES={now:'On Now',later:'Later',teams:'My Teams',apps:'My Apps',review:'Review'};
+const KINDS=[['idea','Idea'],['problem','Problem'],['like','Like']];
+state.noteKind='idea';state.from='now';
+let pushTimer=null,pushing=false,pushAgain=false,lastJSON='';
+const canon=o=>JSON.stringify({favs:[...(o.favs||[])].sort(),owned:[...(o.owned||[])].sort(),reminders:[...(o.reminders||[])].sort(),alerts:Object.fromEntries(Object.entries(o.alerts||{}).sort())});
+const prefsObj=()=>({favs:[...state.favs],owned:[...state.owned],reminders:[...state.reminders],alerts:state.alerts});
+function schedulePush(){
+  if(!CLOUD.db||!CLOUD.sharedOn||CLOUD.canWrite===false)return;
+  clearTimeout(pushTimer);pushTimer=setTimeout(pushPrefs,500);
+}
+async function pushPrefs(){
+  pushTimer=null;
+  if(pushing){pushAgain=true;return}
+  const mine=canon(prefsObj());
+  if(mine===lastJSON)return;
+  pushing=true;
+  try{
+    const o=JSON.parse(mine);
+    await CLOUD.db.doc('shared/prefs').set({...o,at:Date.now()});
+    lastJSON=mine;
+  }catch(e){
+    if(e&&e.code==='invalid_argument')CLOUD.canWrite=false;
+  }
+  pushing=false;
+  if(pushAgain){pushAgain=false;schedulePush()}
+}
+function onPrefs(snap){
+  if(!snap.exists||!CLOUD.sharedOn)return;
+  const d=snap.data(),c=canon(d);
+  if(c===canon(prefsObj())){lastJSON=c;return}
+  if(pushTimer||pushing)return;
+  state.favs=new Set(d.favs||[]);state.owned=new Set(d.owned||[]);state.reminders=new Set(d.reminders||[]);
+  state.alerts=Object.assign({start:true,score:false,swing:true,final:true,gap:true},d.alerts||{});
+  lastJSON=c;saveLocal();
+  if(state.tab!=='review'&&document.activeElement?.id!=='q')render();
+}
+function ago(at){
+  const m=Math.max(0,Math.round((Date.now()-at)/60000));
+  if(m<1)return 'just now';if(m<60)return m+' min ago';
+  const h=Math.round(m/60);if(h<24)return h+' hr ago';
+  return new Date(at).toLocaleDateString(undefined,{month:'short',day:'numeric'});
+}
+async function fillNames(){
+  const els=[...document.querySelectorAll('[data-by]')];
+  const ids=[...new Set(els.map(e=>e.dataset.by).filter(Boolean))];
+  if(!CLOUD.user||!ids.length)return;
+  const ps=await CLOUD.user.profiles(ids);
+  els.forEach(e=>{const p=ps[e.dataset.by];e.textContent=p?(p.isMe?'You':(p.name||'Someone')):'Someone'});
+}
+function noteHTML(n){
+  const mine=n.by&&n.by===CLOUD.me,writable=CLOUD.canWrite!==false;
+  const kind=['idea','problem','like'].includes(n.kind)?n.kind:'idea';
+  return `<div class="ncard ${n.done?'done':''}">
+    <div class="nc-top"><span class="pill ${kind}">${kind.toUpperCase()}</span><span class="nc-ctx">${esc(TABNAMES[n.tab]||'')}${n.scen&&SCEN[n.scen]?' · '+esc(SCEN[n.scen].label):''}</span><span class="nc-when">${esc(ago(n.at||Date.now()))}</span></div>
+    <div class="nc-text">${esc(n.text||'')}</div>
+    <div class="nc-foot"><span class="nc-by" ${n.by?`data-by="${esc(n.by)}"`:''}>Someone</span>
+      ${writable?`<button class="btn ghost sm" data-note-done="${esc(n.id)}">${n.done?'Reopen':'Mark done'}</button>`:''}
+      ${mine?`<button class="btn ghost sm" data-note-del="${esc(n.id)}">Delete</button>`:''}</div>
+  </div>`;
+}
+function updateBadge(){
+  const open=CLOUD.notes.filter(n=>!n.done).length,b=document.getElementById('notecnt');
+  b.hidden=!open;b.textContent=open;
+}
+function updateNotes(){
+  const el=document.getElementById('noteList');if(!el)return;
+  el.innerHTML=CLOUD.notes.length?CLOUD.notes.map(noteHTML).join(''):`<div class="empty">No notes yet. Add the first one above.</div>`;
+  const h=document.getElementById('noteHead');if(h)h.textContent=`Notes · ${CLOUD.notes.length}`;
+  fillNames();
+}
+function onNotes(snap){
+  CLOUD.notes=snap.docs.map(d=>({id:d.id,...d.data()}));
+  updateBadge();
+  if(state.tab==='review')updateNotes();
+}
+function renderReview(){
+  const canW=CLOUD.canWrite!==false;
+  const ctx=`${TABNAMES[state.from]||'On Now'} · ${scen().label}`;
+  view.innerHTML=`
+    <div class="section"><h1>Prototype review</h1><p class="sub">Leave notes on what you see. Everyone who has this link can read them.</p></div>
+    ${canW?`<div class="panel form">
+      <div class="kinds" role="group" aria-label="Type of note">${KINDS.map(([k,l])=>`<button class="chip" data-kind="${k}" aria-pressed="${state.noteKind===k}">${l}</button>`).join('')}</div>
+      <label class="sub" for="noteText">About: ${esc(ctx)}</label>
+      <textarea id="noteText" maxlength="2000" placeholder="What stood out? What would you change?"></textarea>
+      <div class="actions"><button class="btn" id="noteSend">Send note</button></div>
+    </div>`:`<div class="note">You can read notes here. Ask for Contributor access to add your own.</div>`}
+    <div class="section"><h2 id="noteHead">Notes</h2><div class="plays" id="noteList"></div></div>
+    <div class="section"><h2>Shared setup</h2>
+      <div class="panel"><div class="approw"><div class="info"><div class="nm" id="lbl-shared">Share my teams and apps</div>
+        <div class="what">${canW?'Starred teams, apps, alerts and reminders sync live with everyone who opens this prototype.':'View-only. You see the shared setup, and your own changes stay on this device.'}</div></div>
+        <button class="switch" role="switch" data-shared aria-labelledby="lbl-shared" aria-checked="${CLOUD.sharedOn}"></button></div></div>
+    </div>`;
+  updateNotes();
+}
+async function sendNote(btn){
+  const ta=document.getElementById('noteText'),text=ta.value.trim();
+  if(!text){toast('Write a note first');return}
+  btn.disabled=true;
+  try{
+    await CLOUD.db.collection('feedback').add({kind:state.noteKind,text:text.slice(0,2000),tab:state.from||'now',scen:state.scen,by:CLOUD.me,at:Date.now(),done:false});
+    ta.value='';toast('Note sent');
+  }catch(err){
+    toast(err&&err.code==='invalid_argument'?'You need Contributor access to add notes':'Could not send. Try again in a moment');
+  }
+  btn.disabled=false;
+}
+async function toggleDone(id){
+  const n=CLOUD.notes.find(x=>x.id===id);if(!n)return;
+  try{await CLOUD.db.doc('feedback/'+id).update({done:!n.done})}catch(e){toast('Could not update that note')}
+}
+async function deleteNote(id){
+  try{await CLOUD.db.doc('feedback/'+id).delete()}catch(e){toast('Could not delete that note')}
+}
+async function toggleShared(){
+  CLOUD.sharedOn=!CLOUD.sharedOn;store.set('sharedOn',CLOUD.sharedOn);
+  const sw=document.querySelector('[data-shared]');if(sw)sw.setAttribute('aria-checked',CLOUD.sharedOn);
+  if(CLOUD.sharedOn&&CLOUD.db){try{onPrefs(await CLOUD.db.doc('shared/prefs').get())}catch(e){}}
+  toast(CLOUD.sharedOn?'Using the shared setup':'Using your own setup on this device');
+}
+async function initCloud(){
+  let db=null,user=null;
+  try{db=await window.claude.use('db')}catch(e){}
+  try{user=await window.claude.use('user')}catch(e){}
+  if(!db)return;
+  CLOUD.db=db;CLOUD.user=user;
+  try{CLOUD.me=user?await user.id():null}catch(e){}
+  try{CLOUD.canWrite=user?await user.can('data.write'):null}catch(e){}
+  document.getElementById('tab-review').hidden=false;
+  const dead=e=>{if(e&&e.code==='revoked'){CLOUD.db=null;document.getElementById('tab-review').hidden=true;if(state.tab==='review'){state.tab='now';render()}}};
+  db.doc('shared/prefs').onSnapshot(onPrefs,dead);
+  db.collection('feedback').orderBy('at','desc').limit(100).onSnapshot(onNotes,dead);
+}
+
+/* motion: welcome intro, tab and moment transitions, scoreboard effects. Reduced motion skips all of it. */
+const RMQ=matchMedia('(prefers-reduced-motion: reduce)');
+const EASE='cubic-bezier(.2,.9,.25,1)';
+const TAB_ORDER=['now','later','teams','apps','review'];
+const ON_GLYPHS={O:['.###.','#...#','#...#','#...#','#...#','#...#','.###.'],N:['#...#','##..#','#.#.#','#.#.#','#..##','#...#','#...#']};
+let introFinish=null,scrambleTimer=0;
+function blinkColon(s){return s.replace(/:/g,'<span class="cln">:</span>')}
+function stagger(els,{dx=0,dy=10,step=45,dur=280,delay=0}={}){
+  if(RMQ.matches)return;
+  els.forEach((el,i)=>el.animate([{opacity:0,transform:`translate(${dx}px,${dy}px)`},{opacity:1,transform:'none'}],{duration:dur,delay:delay+Math.min(i,7)*step,easing:EASE,fill:'backwards'}));
+}
+function drawCharts(root=view,delay=0){
+  if(RMQ.matches||!root)return;
+  root.querySelectorAll('.spark').forEach(svg=>{
+    svg.querySelector('.line')?.animate([{strokeDasharray:1,strokeDashoffset:1},{strokeDasharray:1,strokeDashoffset:0}],{duration:900,delay,easing:'cubic-bezier(.3,.7,.2,1)',fill:'backwards'});
+    svg.querySelector('.area')?.animate([{opacity:0},{opacity:1}],{duration:600,delay:delay+300,fill:'backwards'});
+    const pts=[...svg.querySelectorAll('.pt')];
+    pts.forEach((c,i)=>c.animate([{transform:'scale(0)'},{transform:'scale(1.7)',offset:.6},{transform:'scale(1)'}],{duration:260,delay:delay+100+i*760/pts.length,fill:'backwards'}));
+    svg.querySelectorAll('.nowpt,.halo').forEach(c=>c.animate([{transform:'scale(0)'},{transform:'scale(1.5)',offset:.6},{transform:'scale(1)'}],{duration:340,delay:delay+850,fill:'backwards'}));
+  });
+  root.querySelectorAll('.wpbar i').forEach((b,i)=>b.animate([{transform:'scaleX(0)'},{transform:'scaleX(1)'}],{duration:700,delay:delay+i*40,easing:EASE,fill:'backwards'}));
+}
+/* scoreboard update: digits roll through random numbers, then settle on the real value */
+function scramble(){
+  if(RMQ.matches)return;
+  clearInterval(scrambleTimer);
+  const nodes=[];
+  document.querySelectorAll('#view .led .on,#view .wp-now,#view .sb-clk,#view .clock,#daytag').forEach(el=>{
+    const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);let n;
+    while((n=w.nextNode()))if(/\d/.test(n.data))nodes.push([n,n.data]);
+  });
+  let k=0;
+  scrambleTimer=setInterval(()=>{
+    const end=++k>7;
+    nodes.forEach(([n,t])=>n.data=end?t:t.replace(/\d/g,()=>Math.random()*10|0));
+    if(end)clearInterval(scrambleTimer);
+  },55);
+}
+function ringBell(){
+  const pip=document.getElementById('pip');
+  if(RMQ.matches||pip.hidden)return;
+  document.querySelector('.bell svg').animate([{transform:'rotate(0)'},{transform:'rotate(16deg)'},{transform:'rotate(-13deg)'},{transform:'rotate(9deg)'},{transform:'rotate(-5deg)'},{transform:'rotate(0)'}],{duration:750,delay:150,easing:'ease-out'});
+  pip.animate([{transform:'scale(0)'},{transform:'scale(1.3)',offset:.6},{transform:'scale(1)'}],{duration:380,delay:150,fill:'backwards'});
+}
+function tabFX(from,to){
+  const d=Math.sign(TAB_ORDER.indexOf(to)-TAB_ORDER.indexOf(from));
+  stagger([...view.children],{dx:d*22,dy:0,step:40,dur:300});
+  drawCharts(view,150);
+}
+/* switching weekend moments: the board flickers like a power change, then scores roll and charts redraw */
+function sceneFX(){
+  if(RMQ.matches)return;
+  view.animate([{opacity:.3},{opacity:1,offset:.3},{opacity:.55,offset:.5},{opacity:1}],{duration:320});
+  scramble();drawCharts(view,120);ringBell();
+}
+function enterFX(full){
+  if(RMQ.matches)return;
+  if(full){
+    document.querySelector('.top').animate([{transform:'translateY(-100%)',opacity:0},{transform:'none',opacity:1}],{duration:420,easing:EASE,fill:'backwards'});
+    document.querySelector('.nav').animate([{transform:'translateY(100%)'},{transform:'none'}],{duration:420,delay:80,easing:EASE,fill:'backwards'});
+  }
+  stagger([document.getElementById('demo'),...view.children],{dy:16,step:55,dur:380,delay:full?120:0});
+  drawCharts(view,full?450:200);
+  setTimeout(()=>{scramble();ringBell()},full?520:150);
+}
+/* welcome: the icon's board powers up (green lamp blinks, dots light column by column into ON),
+   the name and tagline come in, then the app slides into place. Tap anywhere to skip; tap the logo to replay. */
+function playIntro(){
+  document.querySelector('.intro')?.remove();
+  const rows=ON_GLYPHS.O.map((o,r)=>o+'.'+ON_GLYPHS.N[r]);
+  const tag='YOUR TEAMS · LIVE NOW · ON YOUR APPS';
+  const el=document.createElement('div');el.className='intro';el.setAttribute('aria-hidden','true');
+  el.innerHTML=`<div class="ibox"><span class="ipow"></span><div class="imat">${rows.map((row,r)=>[...row].map((ch,c)=>`<i class="d${ch==='#'?' l':''}" style="--c:${c};--r:${r}"></i>`).join('')).join('')}</div></div>
+    <div class="iword">WhereIts<b>On</b></div><div class="itag" style="--n:${tag.length}">${tag}</div><div class="iskip">Tap to skip</div>`;
+  document.body.appendChild(el);
+  const finish=()=>{
+    if(introFinish!==finish)return;
+    introFinish=null;clearTimeout(timer);
+    if(RMQ.matches)return el.remove();
+    el.classList.add('out');enterFX(true);
+    setTimeout(()=>el.remove(),520);
+  };
+  const timer=setTimeout(finish,RMQ.matches?1400:2500);
+  el.addEventListener('pointerdown',finish);
+  introFinish=finish;
+  try{sessionStorage.setItem('wio.intro','1')}catch(e){}
+}
+
+/* invite-only preview: personal invite links, visit tracking, feedback notes with a vote leaderboard, a 3-tap survey.
+   The backend is a Google Sheet's Apps Script web app (feedback/Code.gs, setup in feedback/SETUP.md).
+   Leave FEEDBACK_URL empty for an open demo with no gate and no feedback button. */
+const FEEDBACK_URL='https://script.google.com/macros/s/AKfycbyCDifQjOHsG06yY7yRTFODXYMBw7rjZCR4M59nA-5ElRd9cuvwrtCUzfiUbZjWi4GRpg/exec';
+const FB_KINDS=[['Idea','Idea'],['Problem','Problem'],['Like','Like']];
+const fb={invite:store.get('invite',null),view:'write',kind:'Idea',draft:'',board:null,surveyClock:0,surveySecs:0};
+async function api(a,body={},code){
+  let res;
+  try{res=await fetch(FEEDBACK_URL,{method:'POST',body:JSON.stringify({a,code:code||fb.invite?.code,...body})})}
+  catch(e){throw Object.assign(new Error('offline'),{code:'offline'})}
+  let j;try{j=await res.json()}catch(e){throw Object.assign(new Error('server'),{code:'server'})}
+  if(!j.ok){if(j.error==='invite'&&!code)lockOut();throw Object.assign(new Error(j.error),{code:j.error})}
+  return j;
+}
+function fbErr(e){return ({offline:'You seem to be offline. Try again when you are connected.',rate:'That is a lot of feedback at once. Try again in a little while.',invite:'Your invite is no longer active.',gone:'That note was removed.'})[e.code]||'Something went wrong. Try again in a moment.'}
+function visitCtx(){
+  const ua=navigator.userAgent;
+  const device=/Android/.test(ua)?'Android':/iPhone|iPad|iPod/.test(ua)?'iPhone/iPad':/Mac/.test(ua)?'Mac':/Windows/.test(ua)?'Windows':'Other';
+  return {device,screen:innerWidth+'x'+innerHeight,installed:matchMedia('(display-mode: standalone)').matches};
+}
+
+/* gate */
+function showGate(msg='',err=false){
+  let g=document.querySelector('.gate');
+  if(!g){
+    g=document.createElement('div');g.className='gate';
+    g.innerHTML=`<div class="gword">WhereIts<b>On</b></div><div class="gtag">PREVIEW · INVITE ONLY</div>
+      <p class="sub">Open the invite link you were sent, or enter your code.</p>
+      <form class="gform"><input class="gcode" name="code" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" aria-label="Invite code"><button class="btn">Enter</button></form>
+      <div class="gmsg" role="status"></div>
+      <p class="gnote">The WhereItsOn team sees your visits, survey answers and notes. Other testers see notes without your name.</p>`;
+    g.querySelector('form').addEventListener('submit',e=>{e.preventDefault();const c=g.querySelector('.gcode').value.trim().toUpperCase();if(c)unlock(c)});
+    document.body.appendChild(g);
+  }
+  const m=g.querySelector('.gmsg');m.textContent=msg;m.classList.toggle('err',err);
+  return g;
+}
+function hideGate(){
+  const g=document.querySelector('.gate');if(!g)return;
+  if(RMQ.matches)return g.remove();
+  g.classList.add('out');setTimeout(()=>g.remove(),360);
+}
+async function unlock(code){
+  const g=showGate('Checking your invite…');g.querySelector('button').disabled=true;
+  try{
+    const j=await api('hello',{ctx:visitCtx()},code);
+    fb.invite={code,name:j.name||''};store.set('invite',fb.invite);
+    hideGate();toast(fb.invite.name?`Welcome to the preview, ${fb.invite.name}`:'Welcome to the preview');
+    if(!document.querySelector('.intro'))enterFX(true);
+    onUnlocked(j);
+  }catch(e){
+    if(e.code!=='invite')g.querySelector('.gcode').value=code; // keep the code from the link so a retry is one tap
+    showGate(e.code==='invite'?'That invite is not active. Check the link you were sent.':e.code==='offline'?'You seem to be offline. Connect and try again.':'Could not reach the preview right now. Try again in a moment.',true);
+  }
+  g.querySelector('button').disabled=false;
+}
+function lockOut(){
+  fb.invite=null;store.set('invite',null);
+  document.getElementById('fab')?.remove();document.body.classList.remove('has-fab');clearInterval(fb.surveyClock);fb.surveyClock=0;
+  document.querySelectorAll('.scrim').forEach(s=>s.remove());
+  showGate('This invite is no longer active.',true);
+}
+function onUnlocked(j){
+  if(j&&j.survey)store.set('survey','done');
+  if(!document.getElementById('fab')){
+    const b=document.createElement('button');b.className='fab';b.id='fab';b.dataset.feedback='';
+    b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg>Feedback';
+    document.getElementById('app').appendChild(b);
+  }
+  document.body.classList.add('has-fab');
+  startSurveyClock();
+}
+function initPreview(){
+  if(!FEEDBACK_URL)return;
+  const m=/[?&#]invite=([A-Za-z0-9]{4,12})/.exec(location.search+location.hash);
+  if(m){history.replaceState(null,'',location.pathname);unlock(m[1].toUpperCase());return}
+  if(!fb.invite){showGate();return}
+  onUnlocked();
+  api('hello',{ctx:visitCtx()}).then(j=>{if(j.survey)store.set('survey','done')}).catch(()=>{}); // offline keeps a known tester in
+}
+
+/* feedback sheet: leave a note, or vote on the leaderboard */
+function openFeedback(view){
+  if(view)fb.view=view;
+  showSheet(`<span class="grab"></span><div class="sheet-title">Feedback</div>
+    <div class="seg2" role="group" aria-label="Feedback view"><button class="chip" data-fbview="write">Leave a note</button><button class="chip" data-fbview="board">Leaderboard</button></div>
+    <div id="fbBody"></div><div class="actions"><button class="btn ghost" data-close>Close</button></div>`,
+  (e,scrim)=>{
+    const v=e.target.closest('[data-fbview]');if(v){fb.view=v.dataset.fbview;renderFb();return}
+    const k=e.target.closest('[data-fbkind]');if(k){fb.kind=k.dataset.fbkind;renderFb();return}
+    if(e.target.closest('#fbSend')){postNote();return}
+    const vt=e.target.closest('[data-vote]');if(vt&&!vt.disabled)castVote(vt.dataset.vote);
+  });
+  renderFb();
+}
+function renderFb(){
+  const body=document.getElementById('fbBody');if(!body)return;
+  document.querySelectorAll('[data-fbview]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.fbview===fb.view));
+  if(fb.view==='write'){
+    body.innerHTML=`<div class="q"><div class="kinds" role="group" aria-label="Type of note">${FB_KINDS.map(([k,l])=>`<button class="chip" data-fbkind="${k}" aria-pressed="${fb.kind===k}">${l}</button>`).join('')}</div>
+      <label class="sub" for="fbText">About: ${esc(TABNAMES[state.tab]||'On Now')} · ${esc(scen().label)}</label>
+      <textarea id="fbText" maxlength="500" placeholder="${fb.kind==='Problem'?'What went wrong or felt confusing?':fb.kind==='Like'?'What works well for you?':'What would make this better?'}">${esc(fb.draft)}</textarea>
+      <div class="fbrow"><span class="sub" id="fbCount">${fb.draft.length}/500</span><button class="btn" id="fbSend">Send</button></div>
+      <p class="sub">Other testers see your note without your name and can vote for it. Notes that attack people are held for review.</p></div>`;
+    const ta=document.getElementById('fbText');
+    ta.addEventListener('input',()=>{fb.draft=ta.value;document.getElementById('fbCount').textContent=ta.value.length+'/500'});
+    return;
+  }
+  body.innerHTML=`<p class="sub">Vote for the changes you want most. The team marks what is planned and done.</p><div class="lb" id="lbList">${fb.board?boardHTML():'<div class="empty">Loading the leaderboard…</div>'}</div>`;
+  if(!fb.board)loadBoard();
+}
+async function loadBoard(){
+  try{fb.board=(await api('board')).items}
+  catch(e){const l=document.getElementById('lbList');if(l)l.innerHTML=`<div class="empty">${esc(fbErr(e))}</div>`;return}
+  const l=document.getElementById('lbList');if(l){l.innerHTML=boardHTML();stagger([...l.children],{dy:8,step:35,dur:260})}
+}
+function boardHTML(){
+  if(!fb.board.length)return '<div class="empty">No notes yet. Be the first: switch to Leave a note.</div>';
+  return fb.board.map(n=>{
+    const kind=FB_KINDS.some(([k])=>k===n.kind)?n.kind:'Idea';
+    return `<div class="lbi${n.pending?' pending':''}">
+      <button class="vote" data-vote="${esc(n.id)}" aria-pressed="${n.voted}" ${n.mine||n.pending?'disabled':''} aria-label="${n.mine?'Your note':'Vote'}, ${n.votes} votes">▲<b>${n.votes}</b></button>
+      <div><div class="lbm"><span class="pill ${kind.toLowerCase()}">${esc(kind)}</span>${n.stage&&n.stage!=='New'?`<span class="pill stage">${esc(n.stage)}</span>`:''}${n.mine?'<span class="pill mine">Yours</span>':''}${n.pending?'<span class="pill wait">Waiting for review</span>':''}</div>
+      <div class="nc-text">${esc(n.text)}</div><div class="lbc">${esc(n.ctx)}${n.ctx?' · ':''}${esc(ago(n.at||Date.now()))}</div></div></div>`}).join('');
+}
+async function postNote(){
+  const btn=document.getElementById('fbSend'),text=fb.draft.trim();
+  if(!text){toast('Write a note first');return}
+  btn.disabled=true;btn.textContent='Sending…';
+  try{
+    const j=await api('note',{kind:fb.kind,text,ctx:`${TABNAMES[state.tab]||'On Now'} · ${scen().label}`});
+    fb.draft='';fb.board=null;fb.view='board';renderFb();
+    toast(j.held?'Thanks. Your note is waiting for a quick review.':'Thanks! Your note is on the leaderboard.');
+  }catch(e){toast(fbErr(e));btn.disabled=false;btn.textContent='Send'}
+}
+async function castVote(id){
+  const n=fb.board&&fb.board.find(x=>x.id===id);if(!n)return;
+  n.voted=!n.voted;n.votes+=n.voted?1:-1;
+  const l=document.getElementById('lbList');if(l)l.innerHTML=boardHTML();
+  try{const j=await api('vote',{id});n.votes=j.votes;n.voted=j.voted}
+  catch(e){n.voted=!n.voted;n.votes+=n.voted?1:-1;toast(fbErr(e))}
+  const l2=document.getElementById('lbList');if(l2)l2.innerHTML=boardHTML();
+}
+
+/* 3-tap survey: offered once after about 90 seconds of use, at most three launches, never again once answered */
+function startSurveyClock(){
+  if(store.get('survey',0)==='done'||fb.surveyClock)return;
+  fb.surveyClock=setInterval(()=>{
+    if(document.visibilityState!=='visible'||document.querySelector('.scrim,.intro,.gate'))return;
+    fb.surveySecs+=5;
+    if(fb.surveySecs>=90){clearInterval(fb.surveyClock);openSurvey()}
+  },5000);
+}
+function openSurvey(force){
+  const shown=store.get('survey',0);
+  if(shown==='done'||(!force&&shown>=3))return;
+  store.set('survey',shown+1);
+  const sv={stars:0,use:''};
+  const paint=scrim=>{
+    scrim.querySelectorAll('[data-rate]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.rate<=sv.stars));
+    scrim.querySelectorAll('[data-use]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.use===sv.use));
+    scrim.querySelector('#svSend').disabled=!(sv.stars&&sv.use);
+  };
+  const scrim=showSheet(`<span class="grab"></span><div class="sheet-title">Quick 3 taps</div>
+    <p class="sub">Help shape WhereItsOn. It takes about ten seconds.</p>
+    <div class="q"><div class="ql" id="svq1">How useful is it?</div><div class="rates" role="group" aria-labelledby="svq1">${[1,2,3,4,5].map(i=>`<button class="rate" data-rate="${i}" aria-pressed="false" aria-label="${i} star${i>1?'s':''}">★</button>`).join('')}</div></div>
+    <div class="q"><div class="ql" id="svq2">Would you use it on game day?</div><div class="kinds" role="group" aria-labelledby="svq2">${['Yes','Maybe','No'].map(u=>`<button class="chip" data-use="${u}" aria-pressed="false">${u}</button>`).join('')}</div></div>
+    <div class="q"><label class="ql" for="svText">One thing you'd change? <span>(optional)</span></label><input class="search" id="svText" maxlength="200" autocomplete="off"></div>
+    <div class="actions"><button class="btn ghost" data-close>Not now</button><button class="btn" id="svSend" disabled>Send</button></div>`,
+  async(e,scrim)=>{
+    const r=e.target.closest('[data-rate]');if(r){sv.stars=+r.dataset.rate;paint(scrim);return}
+    const u=e.target.closest('[data-use]');if(u){sv.use=u.dataset.use;paint(scrim);return}
+    const s=e.target.closest('#svSend');if(!s||s.disabled)return;
+    s.disabled=true;s.textContent='Sending…';
+    try{await api('survey',{stars:sv.stars,use:sv.use,change:scrim.querySelector('#svText').value.trim()});store.set('survey','done');closeSheet(scrim);toast('Thanks! That really helps.')}
+    catch(e){toast(fbErr(e));s.disabled=false;s.textContent='Send'}
+  });
+}
+document.addEventListener('click',e=>{if(e.target.closest('[data-feedback]'))openFeedback()});
+
+render();
+initCloud();
+/* intro once per app launch (tap the logo to see it again) */
+let introSeen=false;try{introSeen=!!sessionStorage.getItem('wio.intro')}catch(e){}
+if(!introSeen&&!RMQ.matches)playIntro();else enterFX(false);
+initPreview();
+try{if("serviceWorker" in navigator&&location.protocol.indexOf("http")===0&&window.top===window)navigator.serviceWorker.register("sw.js").catch(function(){})}catch(e){}
+</script>
+
+</html>
