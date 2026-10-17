@@ -109,9 +109,23 @@ function setup() {
 }
 
 function createInviteLinks() {
+  const made = fillInviteLinks_();
+  if (made < 0) return toast_('Add tester names in column A of Invites first.');
+  toast_(made ? made + ' invite link(s) created. Copy them from column C.' : 'Every tester already has a link.');
+}
+
+/* Typing a name in column A of Invites creates that tester's code and link straight away. */
+function onEdit(e) {
+  const r = e && e.range;
+  if (!r || r.getSheet().getName() !== 'Invites' || r.getColumn() !== 1 || r.getLastRow() < 2) return;
+  if (fillInviteLinks_() > 0) toast_('Invite link created. Copy it from column C.');
+}
+
+/* Gives every named tester without a code a new code, link and ticked Active box. Returns how many it made, -1 if no names. */
+function fillInviteLinks_() {
   const sh = sheet_('Invites');
   const n = sh.getLastRow() - 1;
-  if (n < 1) return toast_('Add tester names in column A of Invites first.');
+  if (n < 1) return -1;
   const range = sh.getRange(2, 1, n, 4);
   const rows = range.getValues();
   const used = {};
@@ -127,7 +141,7 @@ function createInviteLinks() {
     r[2] = APP_URL + '?invite=' + String(r[1]).toUpperCase();
   });
   range.setValues(rows);
-  toast_(made ? made + ' invite link(s) created. Copy them from column C.' : 'Every tester already has a link.');
+  return made;
 }
 
 function testScreening() {

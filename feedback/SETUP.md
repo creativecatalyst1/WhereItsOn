@@ -20,9 +20,10 @@ and it is also your dashboard. Until step 5 is done, the live app stays an open 
    "Anyone" lets the app reach it. It answers only people with an active invite code.
 
 ## 4. Invite testers
-1. In the **Invites** tab, type one name per row in column A (add yourself too).
-2. **WhereItsOn → 2. Create invite links.** Each person gets a personal code and link in column C.
-3. Send each person their link. They tap it and they are in, with no code to type.
+1. In the **Invites** tab, type one name per row in column A (add yourself too). Each name gets a personal code,
+   an invite link in column C and a ticked Active box as soon as you press Enter.
+   (For names that were already there, use **WhereItsOn → 2. Create invite links** once.)
+2. Send each person their link. They tap it and they are in, with no code to type.
 
 ## 5. Connect the app
 Send the Web app URL to Claude to publish it, or set it yourself in `www/index.html`:
